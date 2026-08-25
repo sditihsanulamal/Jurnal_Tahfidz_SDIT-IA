@@ -2,29 +2,132 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Portal Jurnal Mutaba'ah</title>
+    
+    <!-- Font Premium -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #021f17; color: white; text-align: center; padding: 40px 20px; }
-        h1 { color: #fde047; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 15px; max-width: 600px; margin: 30px auto; }
-        .btn-kelas { background: rgba(255,255,255,0.1); border: 1px solid #fde047; padding: 15px; border-radius: 12px; color: white; text-decoration: none; font-weight: bold; transition: 0.3s; }
-        .btn-kelas:hover { background: #fde047; color: #021f17; transform: scale(1.05); }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+        
+        body { 
+            background-color: #01120a; 
+            background-image: 
+                radial-gradient(circle at 50% 0%, rgba(3, 54, 36, 0.8) 0%, transparent 60%),
+                radial-gradient(circle at 50% 100%, rgba(212, 175, 55, 0.1) 0%, transparent 60%);
+            color: white; 
+            text-align: center; 
+            padding: 50px 20px; 
+            min-height: 100vh;
+            background-attachment: fixed;
+        }
+
+        h1 { font-family: 'Lora', serif; color: #ffffff; font-size: 32px; margin-bottom: 8px; }
+        p.subtitle { color: #d4af37; font-size: 13px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 40px; }
+
+        .container { max-width: 700px; margin: 0 auto; }
+
+        .grade-section { 
+            background: rgba(255, 255, 255, 0.03); 
+            border: 1px solid rgba(255, 255, 255, 0.08); 
+            border-radius: 20px; 
+            padding: 24px; 
+            margin-bottom: 24px; 
+            backdrop-filter: blur(10px); 
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .grade-title { 
+            color: #d4af37; 
+            font-size: 18px; 
+            font-weight: 700; 
+            margin-bottom: 16px; 
+            text-align: left;
+            border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
+            padding-bottom: 10px;
+        }
+
+        .grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); 
+            gap: 12px; 
+        }
+
+        .btn-kelas { 
+            background: rgba(0, 0, 0, 0.3); 
+            border: 1px solid rgba(212, 175, 55, 0.3); 
+            padding: 14px 10px; 
+            border-radius: 12px; 
+            color: white; 
+            text-decoration: none; 
+            font-size: 14px;
+            font-weight: 600; 
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-kelas:hover { 
+            background: linear-gradient(135deg, #d4af37, #997a15); 
+            color: #000; 
+            transform: translateY(-3px); 
+            box-shadow: 0 8px 15px rgba(212, 175, 55, 0.3); 
+            border-color: transparent;
+        }
+        
+        .btn-kelas:active { transform: translateY(0); }
     </style>
 </head>
 <body>
-    <h1>Pilih Kelas</h1>
-    <p>Silakan pilih kelas untuk melihat Jurnal Mutaba'ah</p>
     
-    <div class="grid">
-        <!-- Contoh untuk Kelas 1 dan 5, Anda bisa copy-paste tambah untuk kelas lainnya -->
-        <a href="jurnal.html?kelas=1A" class="btn-kelas">Kelas 1A</a>
-        <a href="jurnal.html?kelas=1B" class="btn-kelas">Kelas 1B</a>
-        <a href="jurnal.html?kelas=1C" class="btn-kelas">Kelas 1C</a>
-        <a href="jurnal.html?kelas=1D" class="btn-kelas">Kelas 1D</a>
-        
-        <a href="jurnal.html?kelas=5A" class="btn-kelas">Kelas 5A</a>
-        <a href="jurnal.html?kelas=5B" class="btn-kelas">Kelas 5B</a>
+    <h1>Pilih Kelas Ananda</h1>
+    <p class="subtitle">Jurnal Mutaba'ah Hafalan</p>
+    
+    <div class="container" id="kelasContainer">
+        <!-- Tombol akan di-generate otomatis oleh JavaScript di bawah -->
     </div>
+
+    <script>
+        // Kamus yang sama persis dengan Jurnal
+        const kamusKelas = {
+            "1A": "1A Melayu", "1B": "1B Batak", "1C": "1C Nias", "1D": "1D Minang",
+            "2A": "2A Jawa", "2B": "2B Sunda", "2C": "2C Mentawai", "2D": "2D Aceh",
+            "3A": "3A Alas", "3B": "3B Pakpak", "3C": "3C Gorontalo", "3D": "3D Flores",
+            "4A": "4A Dayak", "4B": "4B Betawi", "4C": "4C Badui", "4D": "4D Madura",
+            "5A": "5A Tengger", "5B": "5B Toraja", "5C": "5C Ternate", "5D": "5D Bugis",
+            "6A": "6A Kutai", "6B": "6B Paser", "6C": "6C Banjar", "6D": "6D Manggarai"
+        };
+
+        const container = document.getElementById('kelasContainer');
+        const abjad = ['A', 'B', 'C', 'D'];
+
+        // Loop otomatis dari Kelas 1 sampai Kelas 6
+        for(let tingkat = 1; tingkat <= 6; tingkat++) {
+            
+            // Buat pembungkus per tingkat kelas
+            let sectionHtml = \`<div class="grade-section">
+                                <div class="grade-title">Kelas \${tingkat}</div>
+                                <div class="grid">\`;
+            
+            // Loop abjad A, B, C, D
+            abjad.forEach(huruf => {
+                let kode = tingkat + huruf;
+                let namaLengkap = kamusKelas[kode];
+                
+                // Buat tombol yang mengarah ke jurnal.html dengan parameter
+                sectionHtml += \`<a href="jurnal.html?kelas=\${kode}" class="btn-kelas">\${namaLengkap}</a>\`;
+            });
+            
+            sectionHtml += \`</div></div>\`;
+            
+            // Masukkan ke halaman web
+            container.innerHTML += sectionHtml;
+        }
+    </script>
+
 </body>
 </html>
