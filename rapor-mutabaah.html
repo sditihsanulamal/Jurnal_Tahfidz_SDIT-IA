@@ -471,12 +471,13 @@ const docTargetGlobal = "rapor_targets_" + window.kelasTarget; // Agar tiap kela
 
         // Fetch Murid
         onSnapshot(collection(db, koleksiMurid), (snapshot) => {
-            if(!snapshot.empty) {
-                document.getElementById('loadingState').style.display = 'none';
-                if(!selectedMuridId) document.getElementById('emptyState').style.display = 'block';
+    document.getElementById('loadingState').style.display = 'none'; // Pindahkan ini ke luar 'if'
+    
+    if(!snapshot.empty) {
+        if(!selectedMuridId) document.getElementById('emptyState').style.display = 'block';
 
-                dataMuridDinamis = [];
-                snapshot.forEach((doc) => { 
+        dataMuridDinamis = [];
+        snapshot.forEach((doc) => {
                     const data = doc.data();
                     dataMuridDinamis.push({ 
                         id: doc.id, 
@@ -493,10 +494,18 @@ const docTargetGlobal = "rapor_targets_" + window.kelasTarget; // Agar tiap kela
                     }); 
                 });
                 dataMuridDinamis.sort((a,b) => a.nama.localeCompare(b.nama));
-                renderCustomDropdown();
-                if(selectedMuridId) renderProgress();
-            }
-        });
+        renderCustomDropdown();
+        if(selectedMuridId) renderProgress();
+    } else {
+        // Tampilkan pesan khusus jika kelas masih kosong di database
+        document.getElementById('emptyState').innerHTML = `
+            <svg style="width:64px; height:64px; margin-bottom:16px;" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+            <p style="font-size: 14px;">Belum ada data murid untuk kelas ${window.kelasTarget}.<br>Silakan tambahkan data murid terlebih dahulu.</p>
+        `;
+        document.getElementById('emptyState').style.display = 'block';
+        document.getElementById('dropdownDisplay').style.display = 'none'; // Sembunyikan dropdown
+    }
+});
 
         const dropdownDisplay = document.getElementById('dropdownDisplay');
         const dropdownOptions = document.getElementById('dropdownOptions');
