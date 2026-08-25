@@ -370,9 +370,35 @@
             messagingSenderId: "738438625873",
             appId: "1:738438625873:web:5ced29512ce68c34d55670"
         };
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
+        
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+
+// ==========================================
+// 1. TAMBAHKAN LOGIKA MULTI-KELAS DINAMIS
+// ==========================================
+const kamusKelas = {
+    "1A": "1A Melayu", "1B": "1B Batak", "1C": "1C Nias", "1D": "1D Minang",
+    "2A": "2A Jawa", "2B": "2B Sunda", "2C": "2C Mentawai", "2D": "2D Aceh",
+    "3A": "3A Alas", "3B": "3B Pakpak", "3C": "3C Gorontalo", "3D": "3D Flores",
+    "4A": "4A Dayak", "4B": "4B Betawi", "4C": "4C Badui", "4D": "4D Madura",
+    "5A": "5A Tengger", "5B": "5B Toraja", "5C": "5C Ternate", "5D": "5D Bugis",
+    "6A": "6A Kutai", "6B": "6B Paser", "6C": "6C Banjar", "6D": "6D Manggarai"
+};
+
+const urlParams = new URLSearchParams(window.location.search);
+window.kelasTarget = (urlParams.get('kelas') || '5B').toUpperCase();
+const namaLengkapKelas = kamusKelas[window.kelasTarget] || (window.kelasTarget + " (Belum Tersedia)");
+
+// Ubah Judul UI agar Sesuai Kelas
+document.querySelector('.header p').innerText = "Pencapaian Semester Ganjil - Kelas " + namaLengkapKelas;
+document.title = "Executive Report - " + namaLengkapKelas;
+
+// Definisikan Koleksi Spesifik Kelas
+const koleksiMurid = "murid_" + window.kelasTarget;
+const docTargetGlobal = "rapor_targets_" + window.kelasTarget; // Agar tiap kelas punya target berbeda
+// ==========================================
 
         // MINI DATABASE 114 SURAH (Untuk Smart Validation)
         const dbQuran = "Al-Fatihah:7,Al-Baqarah:286,Ali 'Imran:200,An-Nisa:176,Al-Ma'idah:120,Al-An'am:165,Al-A'raf:206,Al-Anfal:75,At-Taubah:129,Yunus:109,Hud:123,Yusuf:111,Ar-Ra'd:43,Ibrahim:52,Al-Hijr:99,An-Nahl:128,Al-Isra':111,Al-Kahf:110,Maryam:98,Taha:135,Al-Anbiya':112,Al-Hajj:78,Al-Mu'minun:118,An-Nur:64,Al-Furqan:77,Asy-Syu'ara':227,An-Naml:93,Al-Qasas:88,Al-'Ankabut:69,Ar-Rum:60,Luqman:34,As-Sajdah:30,Al-Ahzab:73,Saba':54,Fatir:45,Yasin:83,As-Saffat:182,Sad:88,Az-Zumar:75,Ghafir:85,Fussilat:54,Asy-Syura:53,Az-Zukhruf:89,Ad-Dukhan:59,Al-Jasiyah:37,Al-Ahqaf:35,Muhammad:38,Al-Fath:29,Al-Hujurat:18,Qaf:45,Az-Zariyat:60,At-Tur:49,An-Najm:62,Al-Qamar:55,Ar-Rahman:78,Al-Waqi'ah:96,Al-Hadid:29,Al-Mujadilah:22,Al-Hasyr:24,Al-Mumtahanah:13,As-Saff:14,Al-Jumu'ah:11,Al-Munafiqun:11,At-Tagabun:18,At-Talaq:12,At-Tahrim:12,Al-Mulk:30,Al-Qalam:52,Al-Haqqah:52,Al-Ma'arij:44,Nuh:28,Al-Jinn:28,Al-Muzzammil:20,Al-Muddassir:56,Al-Qiyamah:40,Al-Insan:31,Al-Mursalat:50,An-Naba':40,An-Nazi'at:46,'Abasa:42,At-Takwir:29,Al-Infitar:19,Al-Mutaffifin:36,Al-Insyiqaq:25,Al-Buruj:22,At-Tariq:17,Al-A'la:19,Al-Gasyiyah:26,Al-Fajr:30,Al-Balad:20,Asy-Syams:15,Al-Lail:21,Ad-Duha:11,Asy-Syarh:8,At-Tin:8,Al-'Alaq:19,Al-Qadr:5,Al-Bayyinah:8,Az-Zalzalah:8,Al-'Adiyat:11,Al-Qari'ah:11,At-Takasur:8,Al-'Asr:3,Al-Humazah:9,Al-Fil:5,Quraisy:4,Al-Ma'un:7,Al-Kausar:3,Al-Kafirun:6,An-Nasr:3,Al-Lahab:5,Al-Ikhlas:4,Al-Falaq:5,An-Nas:6"
@@ -433,7 +459,7 @@
         });
 
         // Fetch Global Config
-        onSnapshot(doc(db, "config", "rapor_targets"), (docSnap) => {
+        onSnapshot(doc(db, "config", docTargetGlobal), (docSnap) => {
             if (docSnap.exists()) {
                 const data = docSnap.data();
                 if(data.quran) targetQuranGlobal = data.quran;
@@ -444,7 +470,7 @@
         });
 
         // Fetch Murid
-        onSnapshot(collection(db, "murid"), (snapshot) => {
+        onSnapshot(collection(db, koleksiMurid), (snapshot) => {
             if(!snapshot.empty) {
                 document.getElementById('loadingState').style.display = 'none';
                 if(!selectedMuridId) document.getElementById('emptyState').style.display = 'block';
@@ -523,13 +549,13 @@
 
         window.kembalikanKeTargetKelas = async () => {
             if(!confirm("Yakin ingin menghapus target personal Al-Qur'an dan kembali menggunakan target kelas?")) return;
-            try { await updateDoc(doc(db, "murid", selectedMuridId), { isTargetKhusus: false }); } 
+            try { await updateDoc(doc(db, koleksiMurid, selectedMuridId), { isTargetKhusus: false }); } 
             catch (error) { alert("Gagal: " + error.message); }
         };
 
         window.kembalikanKeTargetKelasHD = async () => {
             if(!confirm("Yakin ingin menghapus target personal Hadits & Doa?")) return;
-            try { await updateDoc(doc(db, "murid", selectedMuridId), { isTargetHDKhusus: false }); } 
+            try { await updateDoc(doc(db, koleksiMurid, selectedMuridId), { isTargetHDKhusus: false }); } 
             catch (error) { alert("Gagal: " + error.message); }
         };
 
@@ -635,7 +661,7 @@
                     let newArray = [...selesaisArray];
                     if(isSudah) newArray = newArray.filter(n => n !== nomorStr);
                     else newArray.push(nomorStr);
-                    try { await updateDoc(doc(db, "murid", selectedMuridId), { [dbFieldKey]: newArray }); } 
+                    try { await updateDoc(doc(db, koleksiMurid, selectedMuridId), { [dbFieldKey]: newArray }); } 
                     catch (error) { alert("Error menyimpan: " + error.message); renderProgress(); }
                 };
                 container.appendChild(div);
@@ -694,7 +720,7 @@
             }
 
             try {
-                await updateDoc(doc(db, "murid", selectedMuridId), { [`quranProgress.${surah}`]: ayat });
+                await updateDoc(doc(db, koleksiMurid, selectedMuridId), { [`quranProgress.${surah}`]: ayat });
                 btn.innerText = "Simpan Pencapaian";
                 document.getElementById('ayatModal').classList.remove('open');
             } catch(error) { alert("Gagal memperbarui: " + error.message); btn.innerText = "Simpan Pencapaian"; }
@@ -713,7 +739,7 @@
             newEkstra.push({ nama, batas }); 
 
             try {
-                await updateDoc(doc(db, "murid", selectedMuridId), { surahEkstra: newEkstra });
+                await updateDoc(doc(db, koleksiMurid, selectedMuridId), { surahEkstra: newEkstra });
                 document.getElementById('eksNama').value = ''; document.getElementById('eksBatas').value = '';
                 btn.innerText = "Tambahkan Ke Laporan"; document.getElementById('surahEkstraModal').classList.remove('open');
             } catch(error) { alert("Error: " + error.message); btn.innerText = "Tambahkan Ke Laporan"; }
@@ -724,7 +750,7 @@
             if(!confirm(`Hapus ${namaSurah} dari daftar tambahan?`)) return;
             const murid = dataMuridDinamis.find(m => m.id === selectedMuridId);
             const newEkstra = murid.surahEkstra.filter(s => s.nama !== namaSurah);
-            try { await updateDoc(doc(db, "murid", selectedMuridId), { surahEkstra: newEkstra }); } 
+            try { await updateDoc(doc(db, koleksiMurid, selectedMuridId), { surahEkstra: newEkstra }); } 
             catch(error) { alert("Error: " + error.message); }
         };
 
@@ -765,9 +791,9 @@
 
             try {
                 if(modeEditFormQuran === 'global') {
-                    await setDoc(doc(db, "config", "rapor_targets"), { quran: arrayBaru }, { merge: true });
+                    await setDoc(doc(db, "config", docTargetGlobal), { quran: arrayBaru }, { merge: true });
                 } else {
-                    await updateDoc(doc(db, "murid", selectedMuridId), { isTargetKhusus: true, targetQuranKhusus: arrayBaru });
+                    await updateDoc(doc(db, koleksiMurid, selectedMuridId), { isTargetKhusus: true, targetQuranKhusus: arrayBaru });
                 }
                 btn.innerText = "Simpan Target Qur'an"; 
                 document.getElementById('targetQuranModal').classList.remove('open');
@@ -805,9 +831,9 @@
             
             try {
                 if(modeEditFormHD === 'global') {
-                    await setDoc(doc(db, "config", "rapor_targets"), { hadits: newHadits, doa: newDoa }, { merge: true });
+                    await setDoc(doc(db, "config", docTargetGlobal), { hadits: newHadits, doa: newDoa }, { merge: true });
                 } else {
-                    await updateDoc(doc(db, "murid", selectedMuridId), { isTargetHDKhusus: true, targetHaditsKhusus: newHadits, targetDoaKhusus: newDoa });
+                    await updateDoc(doc(db, koleksiMurid, selectedMuridId), { isTargetHDKhusus: true, targetHaditsKhusus: newHadits, targetDoaKhusus: newDoa });
                 }
                 btn.innerText = "Simpan Kolom Baru"; 
                 document.getElementById('targetHDModal').classList.remove('open');
