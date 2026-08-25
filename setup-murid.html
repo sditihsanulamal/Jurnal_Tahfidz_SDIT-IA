@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Setup Murid Masal - Admin</title>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #01120a; color: white; padding: 40px 20px; }
+        .container { max-width: 600px; margin: 0 auto; background: rgba(255,255,255,0.05); padding: 30px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); }
+        h1 { color: #d4af37; text-align: center; margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; color: #fef08a; }
+        input, textarea { width: 100%; padding: 12px; margin-bottom: 20px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.5); color: white; font-size: 15px; }
+        input:focus, textarea:focus { outline: none; border-color: #d4af37; }
+        button { width: 100%; padding: 15px; background: #d4af37; color: black; border: none; border-radius: 10px; font-weight: bold; font-size: 16px; cursor: pointer; transition: 0.3s; }
+        button:hover { background: #fef08a; transform: translateY(-2px); }
+        .status { margin-top: 20px; padding: 15px; border-radius: 10px; display: none; text-align: center; font-weight: bold; }
+        .status.success { background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid #10b981; display: block; }
+        .status.error { background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid #ef4444; display: block; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Import Murid Masal</h1>
+        
+        <label>Nama Kelas Target (Misal: 1A, 1B, 5B)</label>
+        <input type="text" id="inputKelas" placeholder="Ketik kelas...">
+
+        <label>Daftar Nama Murid (Copy-Paste dari Excel)</label>
+        <p style="font-size: 12px; color: #94a3b8; margin-top:-5px;">*Pastikan satu nama berada di satu baris (Enter).</p>
+        <textarea id="inputNama" rows="15" placeholder="Ahmad Yani&#10;Budi Santoso&#10;Citra Lestari"></textarea>
+
+        <button id="btnUpload" onclick="uploadData()">🚀 Upload Semua Murid ke Firebase</button>
+
+        <div id="statusMsg" class="status"></div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        // Kita menggunakan addDoc untuk menambah dokumen dengan ID acak secara otomatis
+        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        // GUNAKAN CONFIG FIREBASE ANDA
+        const firebaseConfig = {
+            apiKey: "AIzaSyBDKfmReRO4M8DMUN8VB2Rmzh7AgkzYA4g",
+            authDomain: "b-toraja.firebaseapp.com",
+            projectId: "b-toraja",
+            storageBucket: "b-toraja.firebasestorage.app",
+            messagingSenderId: "738438625873",
+            appId: "1:738438625873:web:5ced29512ce68c34d55670"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        window.uploadData = async () => {
+            const btn = document.getElementById('btnUpload');
+            const statusDiv = document.getElementById('statusMsg');
+            
+            // Ambil input kelas dan ubah ke huruf besar (misal 1a jadi 1A)
+            const kelas = document.getElementById('inputKelas').value.trim().toUpperCase();
+            const teksNama = document.getElementById('inputNama').value.trim();
+
+            if (!kelas) {
+                tampilkanStatus('error', 'Nama kelas tidak boleh kosong!');
+                return;
+            }
+            if (!teksNama) {
+                tampilkanStatus('error', 'Daftar nama tidak boleh kosong!');
+                return;
+            }
+
+            // Pisahkan teks berdasarkan baris (Enter) dan bersihkan spasi
+            const arrayNama = teksNama.split('\n').map(nama => nama.trim()).filter(nama => nama.length > 0);
+            
+            if (arrayNama.length === 0) {
+                tampilkanStatus('error', 'Tidak ada nama valid yang ditemukan.');
+                return;
+            }
+
+            const namaKoleksi = "murid_" + kelas;
+            
+            // Konfirmasi sebelum mengeksekusi
+            const yakin = confirm(`Anda yakin ingin menambahkan ${arrayNama.length} murid ke kelas ${kelas} (Koleksi: ${namaKoleksi})?`);
+            if (!yakin) return;
+
+            btn.innerText = "Memproses Upload...";
+            btn.disabled = true;
+            statusDiv.className = 'status'; // Sembunyikan status lama
+
+            let sukses = 0;
+            let gagal = 0;
+
+            // Loop untuk mengupload setiap nama
+            for (let i = 0; i < arrayNama.length; i++) {
+                try {
+                    // Struktur data default untuk murid baru
+                    await addDoc(collection(db, namaKoleksi), {
+                        nama: arrayNama[i],
+                        quranStatus: "belum",
+                        haditsStatus: "belum",
+                        doaStatus: "belum",
+                        setoranHarian: "belum",
+                        tanggalSetor: ""
+                    });
+                    sukses++;
+                } catch (error) {
+                    console.error("Gagal menambah: " + arrayNama[i], error);
+                    gagal++;
+                }
+            }
+
+            btn.innerText = "🚀 Upload Semua Murid ke Firebase";
+            btn.disabled = false;
+
+            if (gagal === 0) {
+                tampilkanStatus('success', `✅ Berhasil! ${sukses} murid telah ditambahkan ke kelas ${kelas}.`);
+                document.getElementById('inputNama').value = ""; // Bersihkan kolom setelah sukses
+            } else {
+                tampilkanStatus('error', `⚠️ Selesai dengan error. Sukses: ${sukses}, Gagal: ${gagal}. Periksa console log untuk detailnya.`);
+            }
+        };
+
+        function tampilkanStatus(tipe, pesan) {
+            const statusDiv = document.getElementById('statusMsg');
+            statusDiv.innerText = pesan;
+            statusDiv.className = `status ${tipe}`;
+        }
+    </script>
+</body>
+</html>
