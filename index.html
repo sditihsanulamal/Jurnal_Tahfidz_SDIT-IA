@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Jurnal Mutaba'ah</title>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #021f17; color: white; text-align: center; padding: 40px 20px; }
+        h1 { color: #fde047; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 15px; max-width: 600px; margin: 30px auto; }
+        .btn-kelas { background: rgba(255,255,255,0.1); border: 1px solid #fde047; padding: 15px; border-radius: 12px; color: white; text-decoration: none; font-weight: bold; transition: 0.3s; }
+        .btn-kelas:hover { background: #fde047; color: #021f17; transform: scale(1.05); }
+    </style>
+</head>
+<body>
+    <h1>Pilih Kelas</h1>
+    <p>Silakan pilih kelas untuk melihat Jurnal Mutaba'ah</p>
+    
+    <div class="grid">
+        <!-- Contoh untuk Kelas 1 dan 5, Anda bisa copy-paste tambah untuk kelas lainnya -->
+        <a href="jurnal.html?kelas=1A" class="btn-kelas">Kelas 1A</a>
+        <a href="jurnal.html?kelas=1B" class="btn-kelas">Kelas 1B</a>
+        <a href="jurnal.html?kelas=1C" class="btn-kelas">Kelas 1C</a>
+        <a href="jurnal.html?kelas=1D" class="btn-kelas">Kelas 1D</a>
+        
+        <a href="jurnal.html?kelas=5A" class="btn-kelas">Kelas 5A</a>
+        <a href="jurnal.html?kelas=5B" class="btn-kelas">Kelas 5B</a>
+    </div>
+</body>
+</html>
