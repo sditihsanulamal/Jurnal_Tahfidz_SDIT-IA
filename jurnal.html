@@ -763,20 +763,52 @@
         const db = getFirestore(app);
         const auth = getAuth(app);
 
-        // ==========================================
+                // ==========================================
         // TAMBAHAN KODE UNTUK MULTI-KELAS (DINAMIS)
         // ==========================================
+        
+        // 1. Kamus Nama Kelas Lengkap (Suku Nusantara)
+        const kamusKelas = {
+            "1A": "1A Melayu",
+            "1B": "1B Batak",
+            "1C": "1C Nias",
+            "1D": "1D Minang",
+            "2A": "2A Jawa",
+            "2B": "2B Sunda",
+            "2C": "2C Mentawai",
+            "2D": "2D Aceh",
+            "3A": "3A Alas",
+            "3B": "3B Pakpak",
+            "3C": "3C Gorontalo",
+            "3D": "3D Flores",
+            "4A": "4A Dayak",
+            "4B": "4B Betawi",
+            "4C": "4C Badui",
+            "4D": "4D Madura",
+            "5A": "5A Tengger",
+            "5B": "5B Toraja",
+            "5C": "5C Ternate",
+            "5D": "5D Bugis",
+            "6A": "6A Kutai",
+            "6B": "6B Paser",
+            "6C": "6C Banjar",
+            "6D": "6D Manggarai"
+        };
+
         const urlParams = new URLSearchParams(window.location.search);
         
-        // Ambil kelas dari URL. Jika kosong, anggap saja kelas 5B. Diubah jadi huruf besar semua.
+        // 2. Ambil kelas dari URL (Default ke 5B jika tidak diisi)
         window.kelasTarget = (urlParams.get('kelas') || '5B').toUpperCase(); 
         
-        // Ubah Judul Web dan Header secara Dinamis
-        document.querySelector('header h1').innerText = window.kelasTarget + ' Toraja';
-        document.querySelector('.sidebar-header-text h2').innerText = window.kelasTarget + ' Toraja';
-        document.title = "Jurnal Hafalan " + window.kelasTarget + " - Profesional Edition";
+        // 3. Cari nama lengkap dari kamus. Jika tidak ada, gunakan nama aslinya
+        const namaLengkapKelas = kamusKelas[window.kelasTarget] || (window.kelasTarget + " (Belum Tersedia)");
+        
+        // 4. Ubah Judul Web dan Header secara Dinamis menggunakan nama lengkap
+        document.querySelector('header h1').innerText = namaLengkapKelas;
+        document.querySelector('.sidebar-header-text h2').innerText = namaLengkapKelas;
+        document.title = "Jurnal Hafalan " + namaLengkapKelas + " - Profesional Edition";
 
-        // Tentukan nama koleksi database secara Dinamis
+        // 5. Tentukan nama koleksi database (Menggunakan kode pendek seperti murid_1A, murid_2D, dst)
         const koleksiMurid = "murid_" + window.kelasTarget;
         const koleksiMading = "mading_" + window.kelasTarget;
         // ==========================================
