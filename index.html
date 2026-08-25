@@ -92,7 +92,7 @@
     </div>
 
     <script>
-        // Kamus yang sama persis dengan Jurnal
+        // Kamus kelas
         const kamusKelas = {
             "1A": "1A Melayu", "1B": "1B Batak", "1C": "1C Nias", "1D": "1D Minang",
             "2A": "2A Jawa", "2B": "2B Sunda", "2C": "2C Mentawai", "2D": "2D Aceh",
@@ -108,21 +108,21 @@
         // Loop otomatis dari Kelas 1 sampai Kelas 6
         for(let tingkat = 1; tingkat <= 6; tingkat++) {
             
-            // Buat pembungkus per tingkat kelas
-            let sectionHtml = \`<div class="grade-section">
-                                <div class="grade-title">Kelas \${tingkat}</div>
-                                <div class="grid">\`;
+            // Buat pembungkus per tingkat kelas (Menggunakan tanda kutip tunggal biasa, bukan backtick)
+            let sectionHtml = '<div class="grade-section">';
+            sectionHtml += '<div class="grade-title">Kelas ' + tingkat + '</div>';
+            sectionHtml += '<div class="grid">';
             
             // Loop abjad A, B, C, D
             abjad.forEach(huruf => {
                 let kode = tingkat + huruf;
                 let namaLengkap = kamusKelas[kode];
                 
-                // Buat tombol yang mengarah ke jurnal.html dengan parameter
-                sectionHtml += \`<a href="jurnal.html?kelas=\${kode}" class="btn-kelas">\${namaLengkap}</a>\`;
+                // Buat tombol
+                sectionHtml += '<a href="jurnal.html?kelas=' + kode + '" class="btn-kelas">' + namaLengkap + '</a>';
             });
             
-            sectionHtml += \`</div></div>\`;
+            sectionHtml += '</div></div>';
             
             // Masukkan ke halaman web
             container.innerHTML += sectionHtml;
