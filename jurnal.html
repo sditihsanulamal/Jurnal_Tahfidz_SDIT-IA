@@ -930,14 +930,25 @@
             if (!fields) return "<p style='text-align:center; color:var(--text-muted);'>Data sedang disinkronkan...</p>";
             
             const buatAudioPlayer = (url) => {
-                if (url) {
-                    return '<div class="audio-player-wrap">'
-                        + '<audio controls><source src="' + url + '"></audio>'
-                        + '<div style="font-size:11px; color:var(--text-muted); margin-top:6px; text-align:center;">🎙️ Audio Rekaman</div>'
-                        + '</div>';
+            if (url) {
+                // 1. Logika Otomatis: Cek apakah itu link Google Drive biasa
+                let finalUrl = url;
+                const driveRegex = /\/file\/d\/([a-zA-Z0-9_-]+)/;
+                const match = url.match(driveRegex);
+                
+                // Jika cocok, ubah menjadi direct link secara otomatis
+                if (match && match[1]) {
+                    finalUrl = 'https://drive.google.com/uc?export=download&id=' + match[1];
                 }
-                return '<div class="audio-unavailable">🎙️ Audio belum tersedia</div>';
-            };
+
+                // 2. Render Audio Player (HAPUS type="audio/mpeg" agar support file WhatsApp .ogg/.opus)
+                return '<div class="audio-player-wrap">'
+                    + '<audio controls><source src="' + finalUrl + '"></audio>'
+                    + '<div style="font-size:11px; color:var(--text-muted); margin-top:6px; text-align:center;">🎙️ Audio Rekaman</div>'
+                    + '</div>';
+            }
+            return '<div class="audio-unavailable">🎙️ Audio belum tersedia</div>';
+        };
 
             if (id === 'jadwal-murajaah') {
                 let html = '<div style="display:flex; flex-direction:column; gap:16px;">';
