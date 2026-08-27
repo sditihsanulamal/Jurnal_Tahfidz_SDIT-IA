@@ -776,9 +776,6 @@
         // ==========================================
         // FUNGSI RENDER GALERI DINAMIS (dari Firebase)
         // ==========================================
-        // ==========================================
-        // FUNGSI RENDER GALERI DINAMIS (IMGBB AUTO-EXTRACT)
-        // ==========================================
         function renderGaleri(fields) {
             const grid = document.getElementById('galleryGrid');
             const fotoData = [
@@ -788,45 +785,30 @@
             ];
 
             let html = '';
-            let queueProxy = [];
+            fotoData.forEach(foto => {
+                const rawUrl = fields ? (fields[foto.key] || '') : '';
+                let finalUrl = rawUrl;
 
-            fotoData.forEach((foto, idx) => {
-                let rawInput = fields ? (fields[foto.key] || '').trim() : '';
-                let finalUrl = rawInput;
-                let needsProxy = false;
-
-                if (rawInput) {
-                    // 1. Ekstrak otomatis jika Admin menempelkan kode Embed (HTML / BBCode)
-                    const regexSrc = /src=["'](.*?)["']/;
-                    const regexBbcode = /\[img\](.*?)\[\/img\]/i;
+                // --- MAGIC TRICK: Auto-Convert Link Google Drive ke Direct Image ---
+                if (rawUrl) {
+                    const driveRegex = /\/file\/d\/([a-zA-Z0-9_-]+)/;
+                    const driveMatch = rawUrl.match(driveRegex);
                     
-                    if (regexSrc.test(rawInput)) {
-                        finalUrl = rawInput.match(regexSrc)[1];
-                    } else if (regexBbcode.test(rawInput)) {
-                        finalUrl = rawInput.match(regexBbcode)[1];
-                    } 
-                    // 2. Jika Admin hanya menempelkan link viewer biasa (contoh: https://ibb.co/XyZ123)
-                    else if (rawInput.includes('ibb.co/') && !rawInput.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
-                        needsProxy = true; 
+                    if (driveMatch && driveMatch[1]) {
+                        // Mengubah link bagikan GDrive biasa menjadi link penampil gambar web
+                        finalUrl = 'https://drive.google.com/uc?export=view&id=' + driveMatch[1];
                     }
                 }
+                // -------------------------------------------------------------------
 
-                // ID Unik untuk diproses oleh Proxy API jika diperlukan
-                const imgId = 'foto-real-' + idx;
-                const btnId = 'btn-dl-' + idx;
-
-                if (needsProxy) {
-                    queueProxy.push({ id: imgId, btn: btnId, url: rawInput });
-                }
-
-                // referrerpolicy="no-referrer" penting agar tidak diblokir server ImgBB
                 const fotoKonten = finalUrl
-                    ? '<img id="' + imgId + '" src="' + finalUrl + '" class="foto-real" alt="' + foto.caption + '" referrerpolicy="no-referrer" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'flex\';">' +
-                      '<span class="mading-icon" style="display:none; position:absolute; flex-direction:column; align-items:center; gap:8px;">' + foto.icon + '<span style="font-size:11px; font-family:\'Inter\'; color:var(--danger); font-weight:600;">Gambar Tidak Tersedia</span></span>'
+                    ? '<img src="' + finalUrl + '" class="foto-real" alt="' + foto.caption + '" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'block\';">' +
+                      '<span class="mading-icon" style="display:none; position:absolute;">' + foto.icon + '</span>'
                     : '<span class="mading-icon" style="position:absolute;">' + foto.icon + '</span>';
 
+                // Tombol diubah menjadi Buka (target="_blank") agar stabil saat diklik
                 const downloadBtn = finalUrl
-                    ? '<a id="' + btnId + '" href="' + finalUrl + '" target="_blank" class="download-btn"><svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg> Buka</a>'
+                    ? '<a href="' + finalUrl + '" target="_blank" class="download-btn"><svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg> Buka</a>'
                     : '<span style="font-size:11px; color:var(--text-muted);">Foto belum tersedia</span>';
 
                 html += '<div class="glass-panel gallery-card">'
@@ -839,21 +821,6 @@
             });
 
             grid.innerHTML = html || '<div style="text-align:center; color:var(--text-muted); margin-top:30px; grid-column:1/-1;">Belum ada dokumentasi hari ini.</div>';
-
-            // 3. Jalankan Proxy API latar belakang untuk link viewer ibb.co
-            queueProxy.forEach(item => {
-                fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(item.url)}`)
-                    .then(res => res.json())
-                    .then(data => {
-                        // Membaca metadata halaman ImgBB untuk mencuri direct link-nya
-                        const doc = new DOMParser().parseFromString(data.contents, 'text/html');
-                        const ogImage = doc.querySelector('meta[property="og:image"]');
-                        if (ogImage) {
-                            document.getElementById(item.id).src = ogImage.content;
-                            document.getElementById(item.btn).href = ogImage.content;
-                        }
-                    }).catch(() => console.warn('Gagal memuat auto-link ImgBB. Pastikan URL Valid.'));
-            });
         }
 
         // Render galeri kosong dulu saat pertama load
