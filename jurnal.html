@@ -776,9 +776,6 @@
         // ==========================================
         // FUNGSI RENDER GALERI DINAMIS (dari Firebase)
         // ==========================================
-        // ==========================================
-        // FUNGSI RENDER GALERI DINAMIS (SMART IMGBB HANDLER)
-        // ==========================================
         function renderGaleri(fields) {
             const grid = document.getElementById('galleryGrid');
             const fotoData = [
@@ -789,32 +786,29 @@
 
             let html = '';
             fotoData.forEach(foto => {
-                const rawUrl = fields ? (fields[foto.key] || '').trim() : '';
-                // Deteksi apakah ini link viewer default ibb.co
-                const isViewerLink = rawUrl && rawUrl.includes('ibb.co') && !rawUrl.includes('i.ibb.co');
+                const rawUrl = fields ? (fields[foto.key] || '') : '';
+                let finalUrl = rawUrl;
 
-                let fotoKonten = '';
-                if (!rawUrl) {
-                    // Jika kosong
-                    fotoKonten = '<span class="mading-icon" style="position:absolute;">' + foto.icon + '</span>';
-                } else if (isViewerLink) {
-                    // Jika menggunakan link viewer ibb.co (otomatis dibuat menjadi tombol kartu interaktif yang cantik)
-                    fotoKonten = '<a href="' + rawUrl + '" target="_blank" style="position:absolute; inset:0; display:flex; flex-direction:column; justify-content:center; align-items:center; background:linear-gradient(135deg, rgba(212,175,55,0.15), rgba(3,36,24,0.85)); text-align:center; padding:15px; border-radius:16px; text-decoration:none; border:1px solid rgba(212,175,55,0.3); transition:all 0.3s;" class="ibb-preview-card">'
-                               + '<span style="font-size:32px; margin-bottom:8px;">🖼️</span>'
-                               + '<span style="font-size:13px; font-weight:700; color:var(--gold); margin-bottom:4px;">Klik untuk Lihat Foto</span>'
-                               + '<span style="font-size:11px; color:var(--text-muted); text-decoration:underline;">Buka dokumentasi ImgBB</span>'
-                               + '</a>';
-                } else {
-                    // Jika direct link (i.ibb.co), render gambar asli secara langsung
-                    fotoKonten = '<img src="' + rawUrl + '" class="foto-real" alt="' + foto.caption + '" '
-                               + 'onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'flex\';">'
-                               + '<a href="' + rawUrl + '" target="_blank" style="display:none; position:absolute; inset:0; flex-direction:column; justify-content:center; align-items:center; background:rgba(0,0,0,0.7); text-align:center; padding:15px; text-decoration:none;">'
-                               + '<span style="font-size:12px; color:#fff; font-weight:600;">Klik di sini untuk membuka foto dokumentasi.</span>'
-                               + '</a>';
+                // --- MAGIC TRICK: Auto-Convert Link Google Drive ke Direct Image ---
+                if (rawUrl) {
+                    const driveRegex = /\/file\/d\/([a-zA-Z0-9_-]+)/;
+                    const driveMatch = rawUrl.match(driveRegex);
+                    
+                    if (driveMatch && driveMatch[1]) {
+                        // Mengubah link bagikan GDrive biasa menjadi link penampil gambar web
+                        finalUrl = 'https://drive.google.com/uc?export=view&id=' + driveMatch[1];
+                    }
                 }
+                // -------------------------------------------------------------------
 
-                const downloadBtn = rawUrl
-                    ? '<a href="' + rawUrl + '" target="_blank" class="download-btn"><svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg> Buka</a>'
+                const fotoKonten = finalUrl
+                    ? '<img src="' + finalUrl + '" class="foto-real" alt="' + foto.caption + '" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'block\';">' +
+                      '<span class="mading-icon" style="display:none; position:absolute;">' + foto.icon + '</span>'
+                    : '<span class="mading-icon" style="position:absolute;">' + foto.icon + '</span>';
+
+                // Tombol diubah menjadi Buka (target="_blank") agar stabil saat diklik
+                const downloadBtn = finalUrl
+                    ? '<a href="' + finalUrl + '" target="_blank" class="download-btn"><svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg> Buka</a>'
                     : '<span style="font-size:11px; color:var(--text-muted);">Foto belum tersedia</span>';
 
                 html += '<div class="glass-panel gallery-card">'
