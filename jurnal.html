@@ -553,25 +553,33 @@
             <div id="madingAdminFormArea" style="display:none;">
                 
                 <!-- Form Info Dokumentasi -->
+                <!-- Form Info Dokumentasi -->
                 <div id="form-info-dokumentasi" class="admin-form-mading" style="display:none;">
                     <div class="detail-label" style="margin-bottom:8px;">Tanggal Dokumentasi</div>
-                    <input type="text" id="fdok-tanggal" class="admin-input" placeholder="Misal: Rabu, 05 Agustus 2026" style="margin-bottom:16px;">
+                    <input type="text" id="fdok-tanggal" class="admin-input" placeholder="Misal: Kamis, 27 Agustus 2026" style="margin-bottom:16px;">
                     
                     <div style="border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 16px; margin-top: 8px;">
                         <div class="detail-label" style="margin-bottom:12px;">📸 URL Foto Dokumentasi</div>
-                        <p style="font-size:12px; color:var(--text-muted); margin-bottom:16px;">Upload foto ke Firebase Storage atau Google Drive, lalu tempel link-nya di sini.</p>
+                        
+                        <!-- Shortcut ImgBB -->
+                        <div style="font-size:12px; color:var(--text-muted); margin-bottom:16px; line-height: 1.5;">
+                            Upload foto ke ImgBB, lalu pastikan Anda menyalin <b>"Direct links" (Tautan langsung)</b>.<br>
+                            <a href="https://imgbb.com" target="_blank" style="display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:700; color:var(--mumtaz); text-decoration:none; margin-top:10px; background:rgba(59,130,246,0.1); padding:8px 14px; border-radius:12px; border:1px solid rgba(59,130,246,0.3); transition:all 0.2s;">
+                                🖼️ Buka Web ImgBB
+                            </a>
+                        </div>
                         
                         <div style="margin-bottom:12px;">
                             <span class="audio-url-label">Foto 1 — Pembacaan Zikir Pagi</span>
-                            <input type="text" id="fdok-foto1" class="admin-input" placeholder="Tempel URL foto...">
+                            <input type="text" id="fdok-foto1" class="admin-input" placeholder="Tempel URL Tautan Langsung...">
                         </div>
                         <div style="margin-bottom:12px;">
                             <span class="audio-url-label">Foto 2 — Sholat Dhuha</span>
-                            <input type="text" id="fdok-foto2" class="admin-input" placeholder="Tempel URL foto...">
+                            <input type="text" id="fdok-foto2" class="admin-input" placeholder="Tempel URL Tautan Langsung...">
                         </div>
                         <div>
                             <span class="audio-url-label">Foto 3 — Muraja'ah Hafalan</span>
-                            <input type="text" id="fdok-foto3" class="admin-input" placeholder="Tempel URL foto...">
+                            <input type="text" id="fdok-foto3" class="admin-input" placeholder="Tempel URL Tautan Langsung...">
                         </div>
                     </div>
                 </div>
@@ -591,8 +599,11 @@
                     <!-- BARU: URL Audio Quran -->
                     <div class="audio-url-section">
                         <span class="audio-url-label">🎙️ URL Audio Rekaman Al-Qur'an (Opsional)</span>
-                        <p style="font-size:11px; color:var(--text-muted); margin-bottom:8px;">Upload rekaman ke Firebase Storage atau Google Drive, tempel link-nya di sini.</p>
-                        <input type="text" id="fq-audio" class="admin-input" placeholder="https://... (tempel URL audio)">
+                        <input type="text" id="fq-audio" class="admin-input" placeholder="https://voca.ro/... (tempel URL audio)">
+                        <!-- Shortcut Vocaroo -->
+                        <a href="https://vocaroo.com" target="_blank" style="display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:700; color:var(--gold); text-decoration:none; margin-top:10px; background:rgba(212,175,55,0.1); padding:8px 14px; border-radius:12px; border:1px solid rgba(212,175,55,0.3);">
+                            🎙️ Rekam Suara di Vocaroo
+                        </a>
                     </div>
                 </div>
 
@@ -608,7 +619,11 @@
                     <!-- BARU: URL Audio Hadits -->
                     <div class="audio-url-section" style="margin-bottom:24px;">
                         <span class="audio-url-label">🎙️ URL Audio Rekaman Hadits (Opsional)</span>
-                        <input type="text" id="fh-audio" class="admin-input" style="margin-top:8px;" placeholder="https://... (tempel URL audio hadits)">
+                        <input type="text" id="fh-audio" class="admin-input" style="margin-top:8px;" placeholder="https://voca.ro/... (tempel URL audio hadits)">
+                        <!-- Shortcut Vocaroo -->
+                        <a href="https://vocaroo.com" target="_blank" style="display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:700; color:var(--gold); text-decoration:none; margin-top:10px; background:rgba(212,175,55,0.1); padding:8px 14px; border-radius:12px; border:1px solid rgba(212,175,55,0.3);">
+                            🎙️ Rekam Suara di Vocaroo
+                        </a>
                     </div>
                     
                     <div class="detail-label" style="margin-bottom:8px;">Judul Doa</div>
@@ -620,10 +635,14 @@
                     <div class="detail-label" style="margin-bottom:8px;">Arti Doa</div>
                     <textarea id="fd-arti" class="admin-input" rows="2" style="margin-bottom:16px;"></textarea>
                     
-                    <!-- BARU: URL Audio Doa -->
+                   <!-- BARU: URL Audio Doa -->
                     <div class="audio-url-section">
                         <span class="audio-url-label">🎙️ URL Audio Rekaman Doa (Opsional)</span>
-                        <input type="text" id="fd-audio" class="admin-input" style="margin-top:8px;" placeholder="https://... (tempel URL audio doa)">
+                        <input type="text" id="fd-audio" class="admin-input" style="margin-top:8px;" placeholder="https://voca.ro/... (tempel URL audio doa)">
+                        <!-- Shortcut Vocaroo -->
+                        <a href="https://vocaroo.com" target="_blank" style="display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:700; color:var(--gold); text-decoration:none; margin-top:10px; background:rgba(212,175,55,0.1); padding:8px 14px; border-radius:12px; border:1px solid rgba(212,175,55,0.3);">
+                            🎙️ Rekam Suara di Vocaroo
+                        </a>
                     </div>
                 </div>
 
@@ -767,14 +786,29 @@
 
             let html = '';
             fotoData.forEach(foto => {
-                const url = fields ? (fields[foto.key] || '') : '';
-                const fotoKonten = url
-                    ? '<img src="' + url + '" class="foto-real" alt="' + foto.caption + '" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'block\';">' +
+                const rawUrl = fields ? (fields[foto.key] || '') : '';
+                let finalUrl = rawUrl;
+
+                // --- MAGIC TRICK: Auto-Convert Link Google Drive ke Direct Image ---
+                if (rawUrl) {
+                    const driveRegex = /\/file\/d\/([a-zA-Z0-9_-]+)/;
+                    const driveMatch = rawUrl.match(driveRegex);
+                    
+                    if (driveMatch && driveMatch[1]) {
+                        // Mengubah link bagikan GDrive biasa menjadi link penampil gambar web
+                        finalUrl = 'https://drive.google.com/uc?export=view&id=' + driveMatch[1];
+                    }
+                }
+                // -------------------------------------------------------------------
+
+                const fotoKonten = finalUrl
+                    ? '<img src="' + finalUrl + '" class="foto-real" alt="' + foto.caption + '" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'block\';">' +
                       '<span class="mading-icon" style="display:none; position:absolute;">' + foto.icon + '</span>'
                     : '<span class="mading-icon" style="position:absolute;">' + foto.icon + '</span>';
 
-                const downloadBtn = url
-                    ? '<a href="' + url + '" download class="download-btn"><svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg> Simpan</a>'
+                // Tombol diubah menjadi Buka (target="_blank") agar stabil saat diklik
+                const downloadBtn = finalUrl
+                    ? '<a href="' + finalUrl + '" target="_blank" class="download-btn"><svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg> Buka</a>'
                     : '<span style="font-size:11px; color:var(--text-muted);">Foto belum tersedia</span>';
 
                 html += '<div class="glass-panel gallery-card">'
