@@ -931,17 +931,26 @@
             
             const buatAudioPlayer = (url) => {
             if (url) {
-                // 1. Logika Otomatis: Cek apakah itu link Google Drive biasa
                 let finalUrl = url;
-                const driveRegex = /\/file\/d\/([a-zA-Z0-9_-]+)/;
-                const match = url.match(driveRegex);
                 
-                // Jika cocok, ubah menjadi direct link secara otomatis
-                if (match && match[1]) {
-                    finalUrl = 'https://drive.google.com/uc?export=download&id=' + match[1];
+                // 1. Cek apakah itu link Google Drive
+                const driveRegex = /\/file\/d\/([a-zA-Z0-9_-]+)/;
+                const driveMatch = url.match(driveRegex);
+                
+                // 2. Cek apakah itu link Vocaroo (mendukung voca.ro atau vocaroo.com)
+                const vocarooRegex = /voca\.ro\/([a-zA-Z0-9]+)|vocaroo\.com\/([a-zA-Z0-9]+)/;
+                const vocarooMatch = url.match(vocarooRegex);
+                
+                // Ubah link sesuai platform yang terdeteksi
+                if (driveMatch && driveMatch[1]) {
+                    finalUrl = 'https://drive.google.com/uc?export=download&id=' + driveMatch[1];
+                } else if (vocarooMatch) {
+                    // Ambil ID dari Vocaroo dan ubah jadi direct link media
+                    const vocarooId = vocarooMatch[1] || vocarooMatch[2];
+                    finalUrl = 'https://media.vocaroo.com/mp3/' + vocarooId;
                 }
 
-                // 2. Render Audio Player (HAPUS type="audio/mpeg" agar support file WhatsApp .ogg/.opus)
+                // Render Audio Player
                 return '<div class="audio-player-wrap">'
                     + '<audio controls><source src="' + finalUrl + '"></audio>'
                     + '<div style="font-size:11px; color:var(--text-muted); margin-top:6px; text-align:center;">🎙️ Audio Rekaman</div>'
