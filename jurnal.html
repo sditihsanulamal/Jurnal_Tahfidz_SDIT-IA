@@ -553,7 +553,6 @@
             <div id="madingAdminFormArea" style="display:none;">
                 
                 <!-- Form Info Dokumentasi -->
-                <!-- Form Info Dokumentasi -->
                 <div id="form-info-dokumentasi" class="admin-form-mading" style="display:none;">
                     <div class="detail-label" style="margin-bottom:8px;">Tanggal Dokumentasi</div>
                     <input type="text" id="fdok-tanggal" class="admin-input" placeholder="Misal: Kamis, 27 Agustus 2026" style="margin-bottom:16px;">
@@ -561,12 +560,13 @@
                     <div style="border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 16px; margin-top: 8px;">
                         <div class="detail-label" style="margin-bottom:12px;">📸 URL Foto Dokumentasi</div>
                         
-                        <!-- Shortcut ImgBB -->
-                        <div style="font-size:12px; color:var(--text-muted); margin-bottom:16px; line-height: 1.5;">
-                            Upload foto ke ImgBB, lalu pastikan Anda menyalin <b>"Direct links" (Tautan langsung)</b>.<br>
-                            <a href="https://imgbb.com" target="_blank" style="display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:700; color:var(--mumtaz); text-decoration:none; margin-top:10px; background:rgba(59,130,246,0.1); padding:8px 14px; border-radius:12px; border:1px solid rgba(59,130,246,0.3); transition:all 0.2s;">
-                                🖼️ Buka Web ImgBB
-                            </a>
+                        <!-- Shortcut Postimg -->
+                    <div style="font-size:12px; color:var(--text-muted); margin-bottom:16px; line-height: 1.5;">
+                        Upload foto ke Postimg, lalu pastikan Anda menyalin <b>"Direct link" (Tautan langsung)</b>.<br>
+                        <a href="https://postimages.org/" target="_blank" style="display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:700; color:var(--mumtaz); text-decoration:none; margin-top:10px; background:rgba(59,130,246,0.1); padding:8px 14px; border-radius:12px; border:1px solid rgba(59,130,246,0.3); transition:all 0.2s;">
+                            🖼️ Buka Web Postimg
+                        </a>
+                    </div>
                         </div>
                         
                         <div style="margin-bottom:12px;">
@@ -773,9 +773,6 @@
             return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, '0') + "-" + String(d.getDate()).padStart(2, '0');
         };
 
-        // ==========================================
-        // FUNGSI RENDER GALERI DINAMIS (dari Firebase)
-        // ==========================================
         // ==========================================
         // FUNGSI RENDER GALERI DINAMIS (BERSIH & INSTAN)
         // ==========================================
