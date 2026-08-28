@@ -766,6 +766,13 @@
         let dataMadingDinamis = {};
         window.currentMadingId = null;
 
+        window.getJumlahRakaat = () => {
+    // Mengambil angka pertama dari nama kelas (misal: "1A" -> 1)
+    const tingkat = parseInt(window.kelasTarget.charAt(0));
+    if (tingkat >= 1 && tingkat <= 3) return 2; // Kelas 1, 2, 3
+    if (tingkat === 6) return 6; // Kelas 6
+    return 4; // Default untuk kelas 4 dan 5
+};
         window.toggleSidebarMenu = () => document.getElementById('mainSidebar').classList.toggle('open');
         
         window.getTanggalHariIni = () => {
@@ -1098,20 +1105,23 @@
                     + '</div>';
             
             } else if (id === 'jadwal-imam') {
-                let html = '<div style="display:flex;flex-direction:column;gap:16px;">';
-                ['senin','selasa','rabu','kamis','jumat'].forEach(d => {
-                    const D = d.charAt(0).toUpperCase() + d.slice(1);
-                    html += '<div style="background:rgba(255,255,255,0.05);padding:16px;border-radius:16px;">'
-                        + '<div style="font-weight:700;color:var(--gold);margin-bottom:12px;font-size:15px;border-bottom:1px solid rgba(255,255,255,0.1);padding-bottom:8px;">'
-                        + D + ' - <span style="color:#fff;">' + (fields[d+'_nama'] || '-') + '</span></div>'
-                        + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">'
-                        + '<div><div style="font-size:11px;color:var(--text-muted);">Raka\'at 1</div><div style="font-size:13px;font-weight:600;">' + (fields[d+'_r1'] || '-') + '</div></div>'
-                        + '<div><div style="font-size:11px;color:var(--text-muted);">Raka\'at 2</div><div style="font-size:13px;font-weight:600;">' + (fields[d+'_r2'] || '-') + '</div></div>'
-                        + '<div><div style="font-size:11px;color:var(--text-muted);">Raka\'at 3</div><div style="font-size:13px;font-weight:600;">' + (fields[d+'_r3'] || '-') + '</div></div>'
-                        + '<div><div style="font-size:11px;color:var(--text-muted);">Raka\'at 4</div><div style="font-size:13px;font-weight:600;">' + (fields[d+'_r4'] || '-') + '</div></div>'
-                        + '</div></div>';
-                });
-                return html + '</div>';
+    const jmlRakaat = window.getJumlahRakaat();
+    let html = '<div style="display:flex;flex-direction:column;gap:16px;">';
+    ['senin','selasa','rabu','kamis','jumat'].forEach(d => {
+        const D = d.charAt(0).toUpperCase() + d.slice(1);
+        html += '<div style="background:rgba(255,255,255,0.05);padding:16px;border-radius:16px;">'
+            + '<div style="font-weight:700;color:var(--gold);margin-bottom:12px;font-size:15px;border-bottom:1px solid rgba(255,255,255,0.1);padding-bottom:8px;">'
+            + D + ' - <span style="color:#fff;">' + (fields[d+'_nama'] || '-') + '</span></div>'
+            + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">';
+        
+        // Render rakaat secara dinamis
+        for (let r = 1; r <= jmlRakaat; r++) {
+            html += '<div><div style="font-size:11px;color:var(--text-muted);">Raka\'at ' + r + '</div><div style="font-size:13px;font-weight:600;">' + (fields[d+'_r'+r] || '-') + '</div></div>';
+        }
+        
+        html += '</div></div>';
+    });
+    return html + '</div>';
             
             } else if (id === 'jadwal-tilawah') {
                 let html = '<div style="display:flex;flex-direction:column;gap:16px;">';
@@ -1159,20 +1169,23 @@
             }
 
             if (id === 'jadwal-imam' && document.getElementById('imam-fields-container').innerHTML === '') {
-                let h = '';
-                ['senin','selasa','rabu','kamis','jumat'].forEach(day => {
-                    const Day = day.charAt(0).toUpperCase() + day.slice(1);
-                    h += '<div style="background:rgba(0,0,0,0.2);padding:16px;border-radius:16px;margin-bottom:16px;border:1px solid rgba(255,255,255,0.05);">'
-                        + '<div class="detail-label" style="margin-bottom:12px;color:white;">Hari ' + Day + '</div>'
-                        + '<input type="text" id="fi-' + day + '-nama" class="admin-input" placeholder="Nama Imam" style="margin-bottom:10px;">'
-                        + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">'
-                        + '<input type="text" id="fi-' + day + '-r1" class="admin-input" placeholder="Rakaat 1" style="font-size:13px;">'
-                        + '<input type="text" id="fi-' + day + '-r2" class="admin-input" placeholder="Rakaat 2" style="font-size:13px;">'
-                        + '<input type="text" id="fi-' + day + '-r3" class="admin-input" placeholder="Rakaat 3" style="font-size:13px;">'
-                        + '<input type="text" id="fi-' + day + '-r4" class="admin-input" placeholder="Rakaat 4" style="font-size:13px;">'
-                        + '</div></div>';
-                });
-                document.getElementById('imam-fields-container').innerHTML = h;
+    const jmlRakaat = window.getJumlahRakaat();
+    let h = '';
+    ['senin','selasa','rabu','kamis','jumat'].forEach(day => {
+        const Day = day.charAt(0).toUpperCase() + day.slice(1);
+        h += '<div style="background:rgba(0,0,0,0.2);padding:16px;border-radius:16px;margin-bottom:16px;border:1px solid rgba(255,255,255,0.05);">'
+            + '<div class="detail-label" style="margin-bottom:12px;color:white;">Hari ' + Day + '</div>'
+            + '<input type="text" id="fi-' + day + '-nama" class="admin-input" placeholder="Nama Imam" style="margin-bottom:10px;">'
+            + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">';
+        
+        // Input rakaat dinamis
+        for (let r = 1; r <= jmlRakaat; r++) {
+            h += '<input type="text" id="fi-' + day + '-r' + r + '" class="admin-input" placeholder="Rakaat ' + r + '" style="font-size:13px;">';
+        }
+        
+        h += '</div></div>';
+    });
+    document.getElementById('imam-fields-container').innerHTML = h;
             }
 
             if (id === 'jadwal-tilawah' && document.getElementById('form-jadwal-tilawah').innerHTML === '') {
@@ -1226,14 +1239,16 @@
                         document.getElementById('ft-n' + i).value = f['n' + i] || '';
                         document.getElementById('ft-s' + i).value = f['s' + i] || '';
                     }
-                } else if (id === 'jadwal-imam') {
-                    ['senin','selasa','rabu','kamis','jumat'].forEach(day => {
-                        document.getElementById('fi-' + day + '-nama').value = f[day + '_nama'] || '';
-                        document.getElementById('fi-' + day + '-r1').value = f[day + '_r1'] || '';
-                        document.getElementById('fi-' + day + '-r2').value = f[day + '_r2'] || '';
-                        document.getElementById('fi-' + day + '-r3').value = f[day + '_r3'] || '';
-                        document.getElementById('fi-' + day + '-r4').value = f[day + '_r4'] || '';
-                    });
+               } else if (id === 'jadwal-imam') {
+    const jmlRakaat = window.getJumlahRakaat();
+    ['senin','selasa','rabu','kamis','jumat'].forEach(day => {
+        document.getElementById('fi-' + day + '-nama').value = f[day + '_nama'] || '';
+        for (let r = 1; r <= jmlRakaat; r++) {
+            const inputEl = document.getElementById('fi-' + day + '-r' + r);
+            if (inputEl) inputEl.value = f[day + '_r' + r] || '';
+        }
+    });
+}
                 } else if (id === 'info-dokumentasi') {
                     document.getElementById('fdok-tanggal').value = f.tanggal || '';
                     document.getElementById('fdok-foto1').value = f.foto1 || ''; // BARU
@@ -1291,13 +1306,16 @@
                     newFields['s' + i] = document.getElementById('ft-s' + i).value;
                 }
             } else if (id === 'jadwal-imam') {
-                ['senin','selasa','rabu','kamis','jumat'].forEach(day => {
-                    newFields[day + '_nama'] = document.getElementById('fi-' + day + '-nama').value;
-                    newFields[day + '_r1'] = document.getElementById('fi-' + day + '-r1').value;
-                    newFields[day + '_r2'] = document.getElementById('fi-' + day + '-r2').value;
-                    newFields[day + '_r3'] = document.getElementById('fi-' + day + '-r3').value;
-                    newFields[day + '_r4'] = document.getElementById('fi-' + day + '-r4').value;
-                });
+    const jmlRakaat = window.getJumlahRakaat();
+    ['senin','selasa','rabu','kamis','jumat'].forEach(day => {
+        newFields[day + '_nama'] = document.getElementById('fi-' + day + '-nama').value;
+        for (let r = 1; r <= jmlRakaat; r++) {
+            const inputEl = document.getElementById('fi-' + day + '-r' + r);
+            if (inputEl) {
+                newFields[day + '_r' + r] = inputEl.value;
+            }
+        }
+    });
             } else if (id === 'info-dokumentasi') {
                 newFields = {
                     tanggal: document.getElementById('fdok-tanggal').value,
