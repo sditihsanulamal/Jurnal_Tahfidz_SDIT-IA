@@ -553,7 +553,6 @@
             <div id="madingAdminFormArea" style="display:none;">
                 
                 <!-- Form Info Dokumentasi -->
-                <!-- Form Info Dokumentasi -->
                 <div id="form-info-dokumentasi" class="admin-form-mading" style="display:none;">
                     <div class="detail-label" style="margin-bottom:8px;">Tanggal Dokumentasi</div>
                     <input type="text" id="fdok-tanggal" class="admin-input" placeholder="Misal: Kamis, 27 Agustus 2026" style="margin-bottom:16px;">
@@ -782,12 +781,6 @@
 
         // ==========================================
         // FUNGSI RENDER GALERI DINAMIS (dari Firebase)
-        // ==========================================
-        // ==========================================
-        // FUNGSI RENDER GALERI DINAMIS (IMGBB AUTO-EXTRACT v3)
-        // ==========================================
-        // ==========================================
-        // FUNGSI RENDER GALERI DINAMIS (EKSTRAKTOR DOM)
         // ==========================================
         function renderGaleri(fields) {
             const grid = document.getElementById('galleryGrid');
@@ -1122,8 +1115,7 @@
         html += '</div></div>';
     });
     return html + '</div>';
-            
-            } else if (id === 'jadwal-tilawah') {
+} else if (id === 'jadwal-tilawah') {
                 let html = '<div style="display:flex;flex-direction:column;gap:16px;">';
                 for (let i = 1; i <= 3; i++) {
                     html += '<div style="background:rgba(255,255,255,0.05);padding:16px;border-radius:16px;border-left:4px solid var(--gold);">'
@@ -1248,7 +1240,6 @@
             if (inputEl) inputEl.value = f[day + '_r' + r] || '';
         }
     });
-}
                 } else if (id === 'info-dokumentasi') {
                     document.getElementById('fdok-tanggal').value = f.tanggal || '';
                     document.getElementById('fdok-foto1').value = f.foto1 || ''; // BARU
