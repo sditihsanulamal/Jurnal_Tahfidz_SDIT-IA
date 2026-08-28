@@ -768,9 +768,9 @@
         window.getJumlahRakaat = () => {
     // Mengambil angka pertama dari nama kelas (misal: "1A" -> 1)
     const tingkat = parseInt(window.kelasTarget.charAt(0));
-    if (tingkat >= 1 && tingkat <= 3) return 2; // Kelas 1, 2, 3
+    if (tingkat >= 1 && tingkat <= 2) return 2;
     if (tingkat === 6) return 6; // Kelas 6
-    return 4; // Default untuk kelas 4 dan 5
+    return 4;
 };
         window.toggleSidebarMenu = () => document.getElementById('mainSidebar').classList.toggle('open');
         
@@ -785,9 +785,9 @@
         function renderGaleri(fields) {
             const grid = document.getElementById('galleryGrid');
             const fotoData = [
-                { key: 'foto1', caption: 'Pembacaan Zikir Pagi', time: '07:00 - 07:20 WITA', icon: '📿' },
-                { key: 'foto2', caption: 'Sholat Dhuha', time: '07:20 - 07:40 WITA', icon: '📸' },
-                { key: 'foto3', caption: "Muraja'ah Hafalan", time: '08:00 - 08:30 WITA', icon: '📖' },
+                { key: 'foto1', caption: 'Pembacaan Zikir Pagi', time: '08:00 - 08:20 WITA', icon: '📿' },
+                { key: 'foto2', caption: 'Sholat Dhuha', time: '08:00 - 08:20 WITA', icon: '📸' },
+                { key: 'foto3', caption: "Muraja'ah Hafalan", time: '08:45 - 09:10 WITA', icon: '📖' },
             ];
 
             let html = '';
