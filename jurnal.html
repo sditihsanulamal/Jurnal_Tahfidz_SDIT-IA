@@ -8,7 +8,7 @@
     <!-- Font Premium -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Inter:wght@300;400;500;600;700;800&family=Lora:ital,wght@0,500;0,600;1,500&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <style>
         :root {
@@ -32,7 +32,7 @@
             --shadow-glow: 0 0 15px rgba(212, 175, 55, 0.15);
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
 
         body { 
             background-color: var(--bg-dark);
@@ -75,6 +75,20 @@
             100% { opacity: 1; transform: scale(1) translateY(0); }
         }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        
+        /* --- KODE TAMBAHAN UNTUK JUDUL --- */
+header h1, 
+.sidebar-header-text h2, 
+#modalNama, 
+h2#madingTitleText { 
+    font-family: 'Playfair Display', serif !important; 
+    background: linear-gradient(to right, #bf953f, #fcf6ba, #b38728, #fbf5b7, #aa771c) !important;
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
+    color: transparent !important;
+    letter-spacing: 0.5px;
+}
+/* --------------------------------- */
 
         header { padding: 50px 20px 30px; text-align: center; position: relative; animation: fadeIn 0.6s ease-out; }
         header h1 { font-family: 'Lora', serif; font-size: 34px; font-weight: 600; letter-spacing: -0.5px; margin-bottom: 8px; color: #ffffff; }
