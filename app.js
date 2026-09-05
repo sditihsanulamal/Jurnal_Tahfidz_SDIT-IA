@@ -587,15 +587,28 @@ window.simpanDataMading = async () => {
         await setDoc(doc(db, koleksiMading, id), { title: newTitle, fields: newFields }, { merge: true });
         
         if (id === 'target-quran') {
-            const batch = writeBatch(db);
-            const targetGabungan = newFields.surah + ' - ' + newFields.ayat;
-            dataMuridDinamis.forEach((murid) => {
-                batch.update(doc(db, koleksiMurid, murid.id), { quranTarget: targetGabungan });
-            });
-            await batch.commit();
-        }
+                    const batch = writeBatch(db);
+                    const targetGabungan = newFields.surah + ' - ' + newFields.ayat;
+                    dataMuridDinamis.forEach((murid) => {
+                        batch.update(doc(db, koleksiMurid, murid.id), { quranTarget: targetGabungan });
+                    });
+                    await batch.commit();
+                }
 
-        btn.innerText = "Simpan Pengumuman";
+                if (id === 'target-hadits') {
+                    const batch = writeBatch(db);
+                    const haditsTarget = (newFields.h_judul || '').trim();
+                    const doaTarget = (newFields.d_judul || '').trim();
+                    dataMuridDinamis.forEach((murid) => {
+                        const updates = {};
+                        if (haditsTarget) updates.haditsTarget = haditsTarget;
+                        if (doaTarget) updates.doaTarget = doaTarget;
+                        if (Object.keys(updates).length) batch.update(doc(db, koleksiMurid, murid.id), updates);
+                    });
+                    await batch.commit();
+                }
+
+                btn.innerText = "Simpan Pengumuman";
         window.closeModal('madingModal');
     } catch (error) {
         alert("Error: " + error.message);
