@@ -50,6 +50,36 @@ window.getJumlahRakaat = () => {
 };
 window.toggleSidebarMenu = () => document.getElementById('mainSidebar').classList.toggle('open');
 
+window.tambahItemMading = (type, data = {}) => {
+    const isHadits = type === 'hadits';
+    const container = document.getElementById(isHadits ? 'container-hadits' : 'container-doa');
+    
+    let html = `<div class="dinamis-item" style="border:1px dashed rgba(212,175,55,0.4); padding:15px; margin-bottom:15px; border-radius:8px; position:relative;">
+        <button type="button" onclick="this.parentElement.remove()" style="position:absolute; top:10px; right:10px; background:rgba(255,59,48,0.2); color:#ff3b30; border:1px solid #ff3b30; border-radius:4px; padding:4px 8px; font-size:10px; cursor:pointer;">Hapus</button>
+        <div class="detail-label" style="margin-bottom:8px;">Judul ${isHadits ? 'Hadits' : 'Doa'}</div>
+        <input type="text" class="admin-input dyn-judul" value="${data.judul || ''}" style="margin-bottom:10px;">
+        <div class="detail-label" style="margin-bottom:8px;">Teks Arab ${isHadits ? 'Hadits' : 'Doa'}</div>
+        <textarea class="admin-input dyn-arab" rows="2" style="font-family:'Amiri'; font-size:18px; direction:rtl; margin-bottom:10px;">${data.arab || ''}</textarea>`;
+        
+    if (!isHadits) {
+        html += `<div class="detail-label" style="margin-bottom:8px;">Latin Doa</div>
+                 <textarea class="admin-input dyn-latin" rows="2" style="margin-bottom:10px;">${data.latin || ''}</textarea>`;
+    }
+    
+    html += `<div class="detail-label" style="margin-bottom:8px;">Arti ${isHadits ? 'Hadits' : 'Doa'}</div>
+             <textarea class="admin-input dyn-arti" rows="2" style="margin-bottom:16px;">${data.arti || ''}</textarea>
+             <div class="audio-url-section" style="margin-bottom:10px;">
+                 <span class="audio-url-label">🎙️ URL Audio Rekaman (Opsional)</span>
+                 <input type="text" class="admin-input dyn-audio" value="${data.audio || ''}" style="margin-top:8px;" placeholder="https://voca.ro/...">
+                 <a href="https://vocaroo.com" target="_blank" style="display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:700; color:var(--gold); text-decoration:none; margin-top:10px; background:rgba(212,175,55,0.1); padding:8px 14px; border-radius:12px; border:1px solid rgba(212,175,55,0.3);">
+                     🎙️ Rekam Suara di Vocaroo
+                 </a>
+             </div>
+        </div>`;
+    
+    container.insertAdjacentHTML('beforeend', html);
+};
+
 window.getTanggalHariIni = () => {
     const d = new Date();
     return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, '0') + "-" + String(d.getDate()).padStart(2, '0');
@@ -353,20 +383,33 @@ window.renderMadingHtml = (id, fields) => {
             + '</div>';
     
     } else if (id === 'target-hadits') {
-        return '<div style="text-align:center;margin-bottom:30px;">'
-            + '<span class="hari-badge" style="margin-top:0;">' + (fields.h_judul || '') + '</span>'
-            + '<div class="arabic-text" style="margin:20px 0;">' + (fields.h_arab || '') + '</div>'
-            + '<div style="font-size:14px;font-style:italic;color:var(--text-muted);">"' + (fields.h_arti || '') + '"</div>'
-            + buatAudioPlayer(fields.h_audio)
-            + '</div>'
-            + '<hr style="border:0;border-top:1px dashed rgba(255,255,255,0.1);margin:20px 0;">'
-            + '<div style="text-align:center;">'
-            + '<span class="hari-badge" style="margin-top:0;">' + (fields.d_judul || '') + '</span>'
-            + '<div class="arabic-text" style="margin:20px 0;">' + (fields.d_arab || '') + '</div>'
-            + '<div style="font-size:12px;font-weight:700;color:var(--gold);letter-spacing:1px;margin-bottom:12px;">' + (fields.d_latin || '') + '</div>'
-            + '<div style="font-size:14px;font-style:italic;color:var(--text-muted);">"' + (fields.d_arti || '') + '"</div>'
-            + buatAudioPlayer(fields.d_audio)
-            + '</div>';
+        let htmlHadits = '';
+        const listH = fields.listHadits || (fields.h_judul ? [{judul: fields.h_judul, arab: fields.h_arab, arti: fields.h_arti, audio: fields.h_audio}] : []);
+        listH.forEach(h => {
+            if(!h.judul && !h.arab) return;
+            htmlHadits += '<div style="text-align:center;margin-bottom:30px;">'
+                + '<span class="hari-badge" style="margin-top:0;">' + (h.judul || '') + '</span>'
+                + '<div class="arabic-text" style="margin:20px 0;">' + (h.arab || '') + '</div>'
+                + '<div style="font-size:14px;font-style:italic;color:var(--text-muted);">"' + (h.arti || '') + '"</div>'
+                + buatAudioPlayer(h.audio)
+                + '</div>';
+        });
+
+        let htmlDoa = '';
+        const listD = fields.listDoa || (fields.d_judul ? [{judul: fields.d_judul, arab: fields.d_arab, latin: fields.d_latin, arti: fields.d_arti, audio: fields.d_audio}] : []);
+        listD.forEach(d => {
+            if(!d.judul && !d.arab) return;
+            htmlDoa += '<div style="text-align:center;margin-bottom:30px;">'
+                + '<span class="hari-badge" style="margin-top:0;">' + (d.judul || '') + '</span>'
+                + '<div class="arabic-text" style="margin:20px 0;">' + (d.arab || '') + '</div>'
+                + '<div style="font-size:12px;font-weight:700;color:var(--gold);letter-spacing:1px;margin-bottom:12px;">' + (d.latin || '') + '</div>'
+                + '<div style="font-size:14px;font-style:italic;color:var(--text-muted);">"' + (d.arti || '') + '"</div>'
+                + buatAudioPlayer(d.audio)
+                + '</div>';
+        });
+        
+        const divider = (htmlHadits && htmlDoa) ? '<hr style="border:0;border-top:1px dashed rgba(255,255,255,0.1);margin:20px 0;">' : '';
+        return (htmlHadits || '') + divider + (htmlDoa || '');
     
     } else if (id === 'jadwal-imam') {
         const jmlRakaat = window.getJumlahRakaat();
@@ -483,15 +526,16 @@ window.openMading = (id) => {
             document.getElementById('fq-ayat').value = f.ayat || '';
             document.getElementById('fq-audio').value = f.audio || '';
         } else if (id === 'target-hadits') {
-            document.getElementById('fh-judul').value = f.h_judul || '';
-            document.getElementById('fh-arab').value = f.h_arab || '';
-            document.getElementById('fh-arti').value = f.h_arti || '';
-            document.getElementById('fh-audio').value = f.h_audio || '';
-            document.getElementById('fd-judul').value = f.d_judul || '';
-            document.getElementById('fd-arab').value = f.d_arab || '';
-            document.getElementById('fd-latin').value = f.d_latin || '';
-            document.getElementById('fd-arti').value = f.d_arti || '';
-            document.getElementById('fd-audio').value = f.d_audio || '';
+            document.getElementById('container-hadits').innerHTML = '';
+            document.getElementById('container-doa').innerHTML = '';
+            
+            const listH = f.listHadits || (f.h_judul ? [{judul: f.h_judul, arab: f.h_arab, arti: f.h_arti, audio: f.h_audio}] : []);
+            if(listH.length === 0) listH.push({});
+            listH.forEach(h => window.tambahItemMading('hadits', h));
+            
+            const listD = f.listDoa || (f.d_judul ? [{judul: f.d_judul, arab: f.d_arab, latin: f.d_latin, arti: f.d_arti, audio: f.d_audio}] : []);
+            if(listD.length === 0) listD.push({});
+            listD.forEach(d => window.tambahItemMading('doa', d));
         } else if (id === 'jadwal-tilawah') {
             for (let i = 1; i <= 3; i++) {
                 document.getElementById('ft-h' + i).value = f['h' + i] || '';
@@ -546,17 +590,20 @@ window.simpanDataMading = async () => {
             audio: document.getElementById('fq-audio').value 
         };
     } else if (id === 'target-hadits') {
-        newFields = {
-            h_judul: document.getElementById('fh-judul').value,
-            h_arab: document.getElementById('fh-arab').value,
-            h_arti: document.getElementById('fh-arti').value,
-            h_audio: document.getElementById('fh-audio').value, 
-            d_judul: document.getElementById('fd-judul').value,
-            d_arab: document.getElementById('fd-arab').value,
-            d_latin: document.getElementById('fd-latin').value,
-            d_arti: document.getElementById('fd-arti').value,
-            d_audio: document.getElementById('fd-audio').value  
-        };
+        const hItems = Array.from(document.getElementById('container-hadits').children).map(item => ({
+            judul: item.querySelector('.dyn-judul').value,
+            arab: item.querySelector('.dyn-arab').value,
+            arti: item.querySelector('.dyn-arti').value,
+            audio: item.querySelector('.dyn-audio').value
+        })).filter(h => h.judul || h.arab);
+        const dItems = Array.from(document.getElementById('container-doa').children).map(item => ({
+            judul: item.querySelector('.dyn-judul').value,
+            arab: item.querySelector('.dyn-arab').value,
+            latin: item.querySelector('.dyn-latin').value,
+            arti: item.querySelector('.dyn-arti').value,
+            audio: item.querySelector('.dyn-audio').value
+        })).filter(d => d.judul || d.arab);
+        newFields = { listHadits: hItems, listDoa: dItems };
     } else if (id === 'jadwal-tilawah') {
         for (let i = 1; i <= 3; i++) {
             newFields['h' + i] = document.getElementById('ft-h' + i).value;
@@ -597,8 +644,8 @@ window.simpanDataMading = async () => {
 
                 if (id === 'target-hadits') {
                     const batch = writeBatch(db);
-                    const haditsTarget = (newFields.h_judul || '').trim();
-                    const doaTarget = (newFields.d_judul || '').trim();
+                    const haditsTarget = (newFields.listHadits || []).map(h => h.judul).filter(Boolean).join(" & ").trim();
+                    const doaTarget = (newFields.listDoa || []).map(d => d.judul).filter(Boolean).join(" & ").trim();
                     dataMuridDinamis.forEach((murid) => {
                         const updates = {};
                         if (haditsTarget) updates.haditsTarget = haditsTarget;

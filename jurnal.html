@@ -294,37 +294,13 @@
 
                 <!-- Form Hadits & Doa -->
                 <div id="form-target-hadits" class="admin-form-mading" style="display:none;">
-                    <div class="detail-label" style="margin-bottom:8px;">Judul Hadits</div>
-                    <input type="text" id="fh-judul" class="admin-input" style="margin-bottom:10px;">
-                    <div class="detail-label" style="margin-bottom:8px;">Teks Arab Hadits</div>
-                    <textarea id="fh-arab" class="admin-input" rows="2" style="font-family:'Amiri'; font-size:18px; direction:rtl; margin-bottom:10px;"></textarea>
-                    <div class="detail-label" style="margin-bottom:8px;">Arti Hadits</div>
-                    <textarea id="fh-arti" class="admin-input" rows="2" style="margin-bottom:16px;"></textarea>
-                    
-                    <div class="audio-url-section" style="margin-bottom:24px;">
-                        <span class="audio-url-label">🎙️ URL Audio Rekaman Hadits (Opsional)</span>
-                        <input type="text" id="fh-audio" class="admin-input" style="margin-top:8px;" placeholder="https://voca.ro/... (tempel URL audio hadits)">
-                        <a href="https://vocaroo.com" target="_blank" style="display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:700; color:var(--gold); text-decoration:none; margin-top:10px; background:rgba(212,175,55,0.1); padding:8px 14px; border-radius:12px; border:1px solid rgba(212,175,55,0.3);">
-                            🎙️ Rekam Suara di Vocaroo
-                        </a>
-                    </div>
-                    
-                    <div class="detail-label" style="margin-bottom:8px;">Judul Doa</div>
-                    <input type="text" id="fd-judul" class="admin-input" style="margin-bottom:10px;">
-                    <div class="detail-label" style="margin-bottom:8px;">Teks Arab Doa</div>
-                    <textarea id="fd-arab" class="admin-input" rows="2" style="font-family:'Amiri'; font-size:18px; direction:rtl; margin-bottom:10px;"></textarea>
-                    <div class="detail-label" style="margin-bottom:8px;">Latin Doa</div>
-                    <textarea id="fd-latin" class="admin-input" rows="2" style="margin-bottom:10px;"></textarea>
-                    <div class="detail-label" style="margin-bottom:8px;">Arti Doa</div>
-                    <textarea id="fd-arti" class="admin-input" rows="2" style="margin-bottom:16px;"></textarea>
-                    
-                    <div class="audio-url-section">
-                        <span class="audio-url-label">🎙️ URL Audio Rekaman Doa (Opsional)</span>
-                        <input type="text" id="fd-audio" class="admin-input" style="margin-top:8px;" placeholder="https://voca.ro/... (tempel URL audio doa)">
-                        <a href="https://vocaroo.com" target="_blank" style="display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:700; color:var(--gold); text-decoration:none; margin-top:10px; background:rgba(212,175,55,0.1); padding:8px 14px; border-radius:12px; border:1px solid rgba(212,175,55,0.3);">
-                            🎙️ Rekam Suara di Vocaroo
-                        </a>
-                    </div>
+                    <div style="font-weight:700; color:var(--gold); margin-bottom:15px; font-size:14px; border-bottom:1px solid rgba(212,175,55,0.3); padding-bottom:5px;">📋 TARGET HADITS</div>
+                    <div id="container-hadits"></div>
+                    <button type="button" onclick="window.tambahItemMading('hadits')" class="btn-primary" style="margin-bottom:30px; font-size:12px; padding:8px 15px; width:auto; border-radius:8px; background:rgba(212,175,55,0.1); color:var(--gold); border:1px solid var(--gold);">+ Tambah Hadits Lainnya</button>
+
+                    <div style="font-weight:700; color:var(--gold); margin-bottom:15px; font-size:14px; border-bottom:1px solid rgba(212,175,55,0.3); padding-bottom:5px;">📋 TARGET DOA</div>
+                    <div id="container-doa"></div>
+                    <button type="button" onclick="window.tambahItemMading('doa')" class="btn-primary" style="margin-bottom:10px; font-size:12px; padding:8px 15px; width:auto; border-radius:8px; background:rgba(212,175,55,0.1); color:var(--gold); border:1px solid var(--gold);">+ Tambah Doa Lainnya</button>
                 </div>
 
                 <!-- Form Tilawah -->
