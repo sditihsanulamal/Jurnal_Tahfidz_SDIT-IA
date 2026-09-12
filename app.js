@@ -686,7 +686,20 @@ window.tambahAyatPintar = (aksi) => {
     let textarea = document.getElementById('editQuranRealisasi');
     let teksAsli = textarea.value.trim();
     if (aksi === 'ulangi') { if (!teksAsli.includes("(Muraja'ah)")) textarea.value = teksAsli + " (Muraja'ah)"; return; }
+    
     let teksBersih = teksAsli.toLowerCase().replace(/[^a-z0-9]/g, '');
+    
+    // Normalisasi ejaan yang sering berbeda transliterasinya
+    teksBersih = teksBersih.replace('mujadalah', 'mujadilah');
+    teksBersih = teksBersih.replace('baqaroh', 'baqarah');
+    teksBersih = teksBersih.replace('fatehah', 'fatihah');
+    teksBersih = teksBersih.replace('imron', 'imran');
+    teksBersih = teksBersih.replace('maidoh', 'maidah');
+    teksBersih = teksBersih.replace('dhuha', 'duha');
+    teksBersih = teksBersih.replace('thariq', 'tariq');
+    teksBersih = teksBersih.replace('thaahaa', 'taha').replace('thaha', 'taha');
+    teksBersih = teksBersih.replace('sajadah', 'sajdah');
+    
     let indexSurah = -1; let panjangKecocokan = 0;
     for (let i = 0; i < dbQuran.length; i++) {
         let namaNormal = dbQuran[i].nama.toLowerCase().replace(/[^a-z]/g, '');
