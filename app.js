@@ -44,7 +44,7 @@ window.currentMadingId = null;
 
 window.getJumlahRakaat = () => {
     const tingkat = parseInt(window.kelasTarget.charAt(0));
-    if (tingkat >= 1 && tingkat <= 2) return 2;
+    if (tingkat === 1) return 2;
     if (tingkat === 6) return 6; 
     return 4;
 };
