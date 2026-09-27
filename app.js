@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, onSnapshot, doc, setDoc, updateDoc, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { initializeFirestore, persistentLocalCache, collection, onSnapshot, getDocs, doc, setDoc, updateDoc, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 const firebaseConfig = {
@@ -12,7 +12,8 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+// Strategi 1: Aktifkan offline persistence — data di-cache di browser, hemat read saat refresh
+const db = initializeFirestore(app, { localCache: persistentLocalCache() });
 const auth = getAuth(app);
 
 // MULTI-KELAS DINAMIS
@@ -192,9 +193,10 @@ function renderGaleri(fields) {
 renderGaleri(null);
 let lastGaleriSig = JSON.stringify(null);
 
-onSnapshot(collection(db, koleksiMading), (snapshot) => {
+// Strategi 4: Handler data dipisah menjadi fungsi agar bisa dipakai baik oleh onSnapshot maupun getDocs
+function handleMadingSnapshot(snapshot) {
     dataMadingDinamis = {};
-    snapshot.forEach((doc) => { dataMadingDinamis[doc.id] = doc.data(); });
+    snapshot.forEach((docSnap) => { dataMadingDinamis[docSnap.id] = docSnap.data(); });
 
     const infoDok = dataMadingDinamis['info-dokumentasi'];
     const f = (infoDok && infoDok.fields) ? infoDok.fields : null;
@@ -208,7 +210,22 @@ onSnapshot(collection(db, koleksiMading), (snapshot) => {
         lastGaleriSig = sig;
         renderGaleri(f);
     }
-});
+}
+
+function handleMuridSnapshot(snapshot) {
+    if (!snapshot.empty) {
+        dataMuridDinamis = [];
+        snapshot.forEach((docSnap) => { dataMuridDinamis.push({ id: docSnap.id, ...docSnap.data() }); });
+        dataMuridDinamis.sort((a, b) => a.nama.localeCompare(b.nama));
+        window.renderMurid();
+    } else {
+        document.getElementById('muridList').innerHTML = '<div style="text-align:center; color:var(--gold-muted); margin-top:40px; font-weight:500; grid-column:1/-1;">Belum ada data murid untuk kelas ' + window.kelasTarget + '.<br>Silakan tambahkan data via halaman Setup Murid.</div>';
+    }
+}
+
+// Referensi unsubscribe untuk membersihkan listener lama saat role berubah
+let unsubMading = null;
+let unsubMurid = null;
 
 onAuthStateChanged(auth, (user) => {
     isAdmin = !!user;
@@ -220,16 +237,19 @@ onAuthStateChanged(auth, (user) => {
     if (isAdmin && user.email) {
         document.getElementById('loggedInAs').innerText = '✉️ ' + user.email;
     }
-});
 
-onSnapshot(collection(db, koleksiMurid), (snapshot) => {
-    if (!snapshot.empty) {
-        dataMuridDinamis = [];
-        snapshot.forEach((doc) => { dataMuridDinamis.push({ id: doc.id, ...doc.data() }); });
-        dataMuridDinamis.sort((a, b) => a.nama.localeCompare(b.nama));
-        window.renderMurid();
+    // Bersihkan listener lama sebelum pasang yang baru
+    if (unsubMading) { unsubMading(); unsubMading = null; }
+    if (unsubMurid) { unsubMurid(); unsubMurid = null; }
+
+    if (isAdmin) {
+        // Guru (admin): real-time listener — selalu dapat update otomatis
+        unsubMading = onSnapshot(collection(db, koleksiMading), handleMadingSnapshot);
+        unsubMurid = onSnapshot(collection(db, koleksiMurid), handleMuridSnapshot);
     } else {
-        document.getElementById('muridList').innerHTML = '<div style="text-align:center; color:var(--gold-muted); margin-top:40px; font-weight:500; grid-column:1/-1;">Belum ada data murid untuk kelas ' + window.kelasTarget + '.<br>Silakan tambahkan data via halaman Setup Murid.</div>';
+        // Wali murid / publik: ambil sekali saja — hemat read, cache persistence yang urus sisanya
+        getDocs(collection(db, koleksiMading)).then(handleMadingSnapshot);
+        getDocs(collection(db, koleksiMurid)).then(handleMuridSnapshot);
     }
 });
 
