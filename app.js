@@ -373,27 +373,34 @@ window.openModal = (index) => {
     document.getElementById('editId').value = murid.id;
 
     const hariIni = window.getTanggalHariIni();
-    // Cek apakah data ini memang untuk hari ini
+
+    // ✅ SETIAP mata pelajaran punya tanggal setor sendiri.
+    // Qur'an bisa reset setiap hari, Hadits/Doa hanya reset di hari Jumat.
+    // Ini mencegah nilai lama terhapus hanya karena mata pelajaran lain diisi.
+    const sudahSetorQuranHariIni  = (murid.tanggalSetorQuran  || murid.tanggalSetor || '') === hariIni;
+    const sudahSetorHaditsHariIni = (murid.tanggalSetorHadits || murid.tanggalSetor || '') === hariIni;
+    const sudahSetorDoaHariIni    = (murid.tanggalSetorDoa    || murid.tanggalSetor || '') === hariIni;
+
+    // Master flag untuk badge setoranHarian (sesuai tanggalSetor utama)
     const sudahDinilaiHariIni = (murid.tanggalSetor === hariIni);
 
-    // Untuk mode admin: nilai ABCD hanya tampil jika memang dinilai hari ini.
-    // Jika beda hari, semua grade pill bersih (reset) agar admin mulai dari nol.
-    const qStatus = sudahDinilaiHariIni ? (murid.quranStatus || "belum") : "belum";
-    const qNilaiAngka = sudahDinilaiHariIni ? (murid.quranNilaiAngka || "") : "";
-    const hStatus = sudahDinilaiHariIni ? (murid.haditsStatus || "belum") : "belum";
-    const hNilaiAngka = sudahDinilaiHariIni ? (murid.haditsNilaiAngka || "") : "";
-    const dStatus = sudahDinilaiHariIni ? (murid.doaStatus || "belum") : "belum";
-    const dNilaiAngka = sudahDinilaiHariIni ? (murid.doaNilaiAngka || "") : "";
+    // Mode admin: nilai per subjek hanya tampil jika tanggal subjek tersebut = hari ini
+    const qStatus    = isAdmin ? (sudahSetorQuranHariIni  ? (murid.quranStatus  || 'belum') : 'belum') : (murid.quranStatus  || 'belum');
+    const qNilaiAngka= isAdmin ? (sudahSetorQuranHariIni  ? (murid.quranNilaiAngka  || '') : '') : (murid.quranNilaiAngka  || '');
+    const hStatus    = isAdmin ? (sudahSetorHaditsHariIni ? (murid.haditsStatus || 'belum') : 'belum') : (murid.haditsStatus || 'belum');
+    const hNilaiAngka= isAdmin ? (sudahSetorHaditsHariIni ? (murid.haditsNilaiAngka || '') : '') : (murid.haditsNilaiAngka || '');
+    const dStatus    = isAdmin ? (sudahSetorDoaHariIni    ? (murid.doaStatus    || 'belum') : 'belum') : (murid.doaStatus    || 'belum');
+    const dNilaiAngka= isAdmin ? (sudahSetorDoaHariIni    ? (murid.doaNilaiAngka    || '') : '') : (murid.doaNilaiAngka    || '');
 
-    // Untuk mode publik (wali murid): tampilkan nilai apa adanya (tidak terpengaruh tanggal)
-    const qStatusPublik = murid.quranStatus || "belum";
-    const qNilaiAngkaPublik = murid.quranNilaiAngka || "";
-    const hStatusPublik = murid.haditsStatus || "belum";
-    const hNilaiAngkaPublik = murid.haditsNilaiAngka || "";
-    const dStatusPublik = murid.doaStatus || "belum";
-    const dNilaiAngkaPublik = murid.doaNilaiAngka || "";
+    // Alias untuk mode publik (wali murid) — sama dengan nilai di DB
+    const qStatusPublik = murid.quranStatus || 'belum';
+    const qNilaiAngkaPublik = murid.quranNilaiAngka || '';
+    const hStatusPublik = murid.haditsStatus || 'belum';
+    const hNilaiAngkaPublik = murid.haditsNilaiAngka || '';
+    const dStatusPublik = murid.doaStatus || 'belum';
+    const dNilaiAngkaPublik = murid.doaNilaiAngka || '';
 
-    const statusHarian = sudahDinilaiHariIni ? (murid.setoranHarian || "belum") : "belum";
+    const statusHarian = sudahDinilaiHariIni ? (murid.setoranHarian || 'belum') : 'belum';
 
     window.pilihSetoranHarian(statusHarian);
     document.getElementById('editQuranTarget').value = murid.quranTarget || "";
@@ -1108,22 +1115,43 @@ window.simpanDataMurid = async () => {
         const namaMurid = document.getElementById('modalNama').innerText;
         const tglHariIni = window.getTanggalHariIni();
 
-        await updateDoc(doc(db, koleksiMurid, docId), {
+        // Ambil nilai yang ada di form (hasil dari sesi admin saat ini)
+        const hStatusSave  = document.getElementById('editStatusHadits').value;
+        const hNilaiSave   = document.getElementById('editHaditsNilaiAngka').value;
+        const dStatusSave  = document.getElementById('editStatusDoa').value;
+        const dNilaiSave   = document.getElementById('editDoaNilaiAngka').value;
+
+        // Bangun update object — selalu update Qur'an dan tanggalSetor utama.
+        // Hadits & Doa hanya di-update jika admin memang mengisinya (bukan 'belum' kosong).
+        const updatePayload = {
             setoranHarian: document.getElementById('valSetoranHarian').value,
-            tanggalSetor: tglHariIni,
+            tanggalSetor: tglHariIni,           // master date untuk badge setoranHarian
+            tanggalSetorQuran: tglHariIni,      // ✅ Qur'an punya tanggal sendiri
             quranTarget: document.getElementById('editQuranTarget').value,
             quranRealisasi: qRealisasi,
             quranStatus: qStatus,
             quranNilaiAngka: qNilaiAngka,
             haditsTarget: document.getElementById('editHaditsTarget').value,
             haditsRealisasi: document.getElementById('editHaditsRealisasi').value,
-            haditsStatus: document.getElementById('editStatusHadits').value,
-            haditsNilaiAngka: document.getElementById('editHaditsNilaiAngka').value,
-            doaTarget: document.getElementById('editDoaTarget').value,
-            doaRealisasi: document.getElementById('editDoaRealisasi').value,
-            doaStatus: document.getElementById('editStatusDoa').value,
-            doaNilaiAngka: document.getElementById('editDoaNilaiAngka').value,
-        });
+        };
+
+        // Hadits: update ke DB + catat tanggalnya HANYA jika admin mengisi (bukan kosong/belum)
+        if (hStatusSave && hStatusSave !== 'belum') {
+            updatePayload.haditsStatus      = hStatusSave;
+            updatePayload.haditsNilaiAngka  = hNilaiSave;
+            updatePayload.tanggalSetorHadits = tglHariIni; // ✅ Hadits punya tanggal sendiri
+        }
+
+        // Doa: sama seperti Hadits
+        if (dStatusSave && dStatusSave !== 'belum') {
+            updatePayload.doaTarget    = document.getElementById('editDoaTarget').value;
+            updatePayload.doaRealisasi = document.getElementById('editDoaRealisasi').value;
+            updatePayload.doaStatus    = dStatusSave;
+            updatePayload.doaNilaiAngka= dNilaiSave;
+            updatePayload.tanggalSetorDoa = tglHariIni; // ✅ Doa punya tanggal sendiri
+        }
+
+        await updateDoc(doc(db, koleksiMurid, docId), updatePayload);
 
         // Coba parsing surah dan ayat untuk spreadsheet
         let parsedSurah = "-";
