@@ -948,7 +948,7 @@ header p { color: var(--gold); font-size: 13px; font-weight: 600; letter-spacing
     background: rgba(0,0,0,0.15);
 }
 .sub-grade-names.open {
-    max-height: 200px;
+    max-height: none;
     padding: 8px 10px;
 }
 .sub-grade-names.stat-color-a { border-left-color: #3b82f6; }
