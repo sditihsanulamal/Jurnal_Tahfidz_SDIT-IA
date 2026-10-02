@@ -86,19 +86,48 @@ window.getTanggalHariIni = () => {
     return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, '0') + "-" + String(d.getDate()).padStart(2, '0');
 };
 
+// Tanggal hari sekolah terakhir (Senin-Jumat)
+// Jika hari ini Sabtu, tampilkan Jumat. Jika Minggu, tampilkan Jumat.
+window.getTanggalHariSekolah = () => {
+    const d = new Date();
+    const day = d.getDay(); // 0=Minggu, 6=Sabtu
+    if (day === 0) d.setDate(d.getDate() - 2); // Minggu → Jumat
+    else if (day === 6) d.setDate(d.getDate() - 1); // Sabtu → Jumat
+    const namaHari = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'][d.getDay()];
+    const namaBulan = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'][d.getMonth()];
+    return `${namaHari}, ${String(d.getDate()).padStart(2,'0')} ${namaBulan} ${d.getFullYear()}`;
+};
+
 function renderGaleri(fields) {
     const grid = document.getElementById('galleryGrid');
-    const fotoData = [
-        { key: 'foto1', caption: 'Pembacaan Zikir Pagi', time: '08:00 - 08:20 WITA', icon: '📿' },
-        { key: 'foto2', caption: 'Sholat Dhuha', time: '08:00 - 08:20 WITA', icon: '📸' },
-        { key: 'foto3', caption: "Muraja'ah Hafalan", time: '08:45 - 09:10 WITA', icon: '📖' },
-    ];
+
+    // Bangun daftar foto: prioritaskan array 'fotos' (format baru).
+    // Jika belum ada, backward-compatible dengan foto1/foto2/foto3 lama.
+    let fotoData = [];
+    if (fields && Array.isArray(fields.fotos) && fields.fotos.length > 0) {
+        fotoData = fields.fotos.map(f => ({
+            key: null,
+            rawUrl: f.url || '',
+            caption: f.label || 'Dokumentasi',
+            time: '',
+            icon: '📸'
+        }));
+    } else if (fields) {
+        // Fallback ke format lama
+        const legacyItems = [
+            { rawUrl: fields.foto1 || '', caption: 'Pembacaan Zikir Pagi', icon: '📿' },
+            { rawUrl: fields.foto2 || '', caption: 'Sholat Dhuha', icon: '📸' },
+            { rawUrl: fields.foto3 || '', caption: "Muraja'ah Hafalan", icon: '📖' },
+        ];
+        fotoData = legacyItems.filter(i => i.rawUrl);
+        if (fotoData.length === 0) fotoData = legacyItems; // tampilkan semua meski kosong
+    }
 
     let html = '';
     let queueProxy = [];
 
     fotoData.forEach((foto, idx) => {
-        let rawInput = fields ? (fields[foto.key] || '').trim() : '';
+        let rawInput = (foto.rawUrl !== undefined ? foto.rawUrl : (fields ? (fields[foto.key] || '') : '')).trim();
         let finalUrl = '';
         let needsExtract = false;
 
@@ -148,8 +177,7 @@ function renderGaleri(fields) {
         html += `<div class="glass-panel gallery-card">
             <div class="foto-placeholder">${fotoKonten}</div>
             <div class="gallery-info-wrapper">
-                <div><div class="gallery-caption">${foto.caption}</div>
-                <span class="gallery-time">${foto.time}</span></div>
+                <div class="gallery-caption">${foto.caption}</div>
                 ${downloadBtn}
             </div></div>`;
     });
@@ -201,9 +229,8 @@ function handleMadingSnapshot(snapshot) {
     const infoDok = dataMadingDinamis['info-dokumentasi'];
     const f = (infoDok && infoDok.fields) ? infoDok.fields : null;
 
-    if (f) {
-        document.getElementById('teksTanggalDokumentasi').innerText = f.tanggal || "Belum diset";
-    }
+    // Tanggal otomatis sesuai hari sekolah (Senin-Jumat) — tidak perlu input manual
+    document.getElementById('teksTanggalDokumentasi').innerText = window.getTanggalHariSekolah();
 
     const sig = JSON.stringify(f);
     if (sig !== lastGaleriSig) {
@@ -694,10 +721,26 @@ window.openMading = (id) => {
                 }
             });
         } else if (id === 'info-dokumentasi') {
-            document.getElementById('fdok-tanggal').value = f.tanggal || '';
-            document.getElementById('fdok-foto1').value = f.foto1 || '';
-            document.getElementById('fdok-foto2').value = f.foto2 || '';
-            document.getElementById('fdok-foto3').value = f.foto3 || '';
+            // Bangun daftar item: prioritaskan format array baru, fallback ke lama
+            let existingItems = [];
+            if (Array.isArray(f.fotos) && f.fotos.length > 0) {
+                existingItems = f.fotos;
+            } else {
+                // Migrasi dari format lama
+                if (f.foto1) existingItems.push({ label: 'Pembacaan Zikir Pagi', url: f.foto1 });
+                if (f.foto2) existingItems.push({ label: 'Sholat Dhuha', url: f.foto2 });
+                if (f.foto3) existingItems.push({ label: "Muraja'ah Hafalan", url: f.foto3 });
+            }
+            if (existingItems.length === 0) {
+                existingItems = [
+                    { label: 'Pembacaan Zikir Pagi', url: '' },
+                    { label: 'Sholat Dhuha', url: '' },
+                    { label: "Muraja'ah Hafalan", url: '' },
+                ];
+            }
+            window._renderFotoDinamis(existingItems);
+            const prev = document.getElementById('fdok-tanggal-preview');
+            if (prev) prev.innerText = window.getTanggalHariSekolah();
         }
     } else {
         titleText.style.display = 'block';
@@ -711,7 +754,38 @@ window.openMading = (id) => {
     document.getElementById('madingModal').classList.add('open');
 };
 
+// ─── Form dinamis untuk galeri dokumentasi ────────────────────────────────
+window._renderFotoDinamis = (items) => {
+    const container = document.getElementById('fdok-container');
+    if (!container) return;
+    container.innerHTML = '';
+    items.forEach((item, idx) => window._tambahFotoItem(item.label, item.url));
+};
+
+window._tambahFotoItem = (label = '', url = '') => {
+    const container = document.getElementById('fdok-container');
+    if (!container) return;
+    const idx = container.children.length;
+    const wrap = document.createElement('div');
+    wrap.className = 'fdok-item';
+    wrap.style.cssText = 'display:flex; flex-direction:column; gap:6px; padding:10px 12px; background:rgba(255,255,255,0.03); border-radius:10px; border:1px solid rgba(255,255,255,0.07); margin-bottom:8px; position:relative;';
+    wrap.innerHTML = `
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:2px;">
+            <span style="font-size:10px; font-weight:700; color:var(--gold-muted); text-transform:uppercase; letter-spacing:0.5px;">Item ${idx + 1}</span>
+            <button type="button" onclick="this.closest('.fdok-item').remove()"
+                style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); color:#f87171; border-radius:6px; padding:2px 8px; font-size:11px; cursor:pointer; font-weight:700; transition:all 0.15s ease;">
+                🗑 Hapus
+            </button>
+        </div>
+        <input type="text" class="fdok-label admin-input" placeholder="Nama kegiatan (mis: Sholat Dhuha)" value="${label}" style="margin-bottom:0;">
+        <input type="text" class="fdok-url admin-input" placeholder="URL foto (Tautan Langsung dari PostImg...)" value="${url}" style="margin-bottom:0;">
+    `;
+    container.appendChild(wrap);
+};
+// ──────────────────────────────────────────────────────────────────────────
+
 window.simpanDataMading = async () => {
+
     if (!isAdmin) return;
     const btn = document.getElementById('btnSaveMading');
     btn.innerText = "Menyimpan...";
@@ -764,12 +838,14 @@ window.simpanDataMading = async () => {
             }
         });
     } else if (id === 'info-dokumentasi') {
-        newFields = {
-            tanggal: document.getElementById('fdok-tanggal').value,
-            foto1: document.getElementById('fdok-foto1').value,
-            foto2: document.getElementById('fdok-foto2').value,
-            foto3: document.getElementById('fdok-foto3').value
-        };
+        // Kumpulkan semua item dari form dinamis
+        const fotosArr = [];
+        document.querySelectorAll('.fdok-item').forEach(item => {
+            const label = item.querySelector('.fdok-label').value.trim();
+            const url   = item.querySelector('.fdok-url').value.trim();
+            if (label || url) fotosArr.push({ label, url });
+        });
+        newFields = { fotos: fotosArr };
     }
 
     try {
@@ -1121,34 +1197,39 @@ window.simpanDataMurid = async () => {
         const dStatusSave  = document.getElementById('editStatusDoa').value;
         const dNilaiSave   = document.getElementById('editDoaNilaiAngka').value;
 
-        // Bangun update object — selalu update Qur'an dan tanggalSetor utama.
-        // Hadits & Doa hanya di-update jika admin memang mengisinya (bukan 'belum' kosong).
+        // Selalu simpan: setoranHarian, tanggalSetor master, dan semua target/realisasi
+        // (target bisa diupdate kapan saja, tidak perlu ada grade dulu)
         const updatePayload = {
             setoranHarian: document.getElementById('valSetoranHarian').value,
-            tanggalSetor: tglHariIni,           // master date untuk badge setoranHarian
-            tanggalSetorQuran: tglHariIni,      // ✅ Qur'an punya tanggal sendiri
-            quranTarget: document.getElementById('editQuranTarget').value,
+            tanggalSetor: tglHariIni,   // master date untuk badge setoranHarian & glow kartu
+            quranTarget:    document.getElementById('editQuranTarget').value,
             quranRealisasi: qRealisasi,
-            quranStatus: qStatus,
-            quranNilaiAngka: qNilaiAngka,
-            haditsTarget: document.getElementById('editHaditsTarget').value,
+            haditsTarget:    document.getElementById('editHaditsTarget').value,
             haditsRealisasi: document.getElementById('editHaditsRealisasi').value,
+            doaTarget:    document.getElementById('editDoaTarget').value,
+            doaRealisasi: document.getElementById('editDoaRealisasi').value,
         };
 
-        // Hadits: update ke DB + catat tanggalnya HANYA jika admin mengisi (bukan kosong/belum)
+        // ✅ Qur'an: grade & tanggal hanya disimpan jika admin mengisi (bukan 'belum')
+        // Ini mencegah nilai Qur'an dari Kamis tertimpa saat admin isi Hadits di Jumat
+        if (qStatus && qStatus !== 'belum') {
+            updatePayload.quranStatus     = qStatus;
+            updatePayload.quranNilaiAngka = qNilaiAngka;
+            updatePayload.tanggalSetorQuran = tglHariIni;
+        }
+
+        // ✅ Hadits: grade & tanggal hanya disimpan jika admin mengisi
         if (hStatusSave && hStatusSave !== 'belum') {
             updatePayload.haditsStatus      = hStatusSave;
             updatePayload.haditsNilaiAngka  = hNilaiSave;
-            updatePayload.tanggalSetorHadits = tglHariIni; // ✅ Hadits punya tanggal sendiri
+            updatePayload.tanggalSetorHadits = tglHariIni;
         }
 
-        // Doa: sama seperti Hadits
+        // ✅ Doa: grade & tanggal hanya disimpan jika admin mengisi
         if (dStatusSave && dStatusSave !== 'belum') {
-            updatePayload.doaTarget    = document.getElementById('editDoaTarget').value;
-            updatePayload.doaRealisasi = document.getElementById('editDoaRealisasi').value;
-            updatePayload.doaStatus    = dStatusSave;
-            updatePayload.doaNilaiAngka= dNilaiSave;
-            updatePayload.tanggalSetorDoa = tglHariIni; // ✅ Doa punya tanggal sendiri
+            updatePayload.doaStatus     = dStatusSave;
+            updatePayload.doaNilaiAngka = dNilaiSave;
+            updatePayload.tanggalSetorDoa = tglHariIni;
         }
 
         await updateDoc(doc(db, koleksiMurid, docId), updatePayload);
