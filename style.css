@@ -272,10 +272,17 @@ header p { color: var(--gold); font-size: 13px; font-weight: 600; letter-spacing
     background: rgba(0, 0, 0, 0.7); 
     backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); 
     z-index: 2000; opacity: 0; visibility: hidden; 
+    pointer-events: none;
+    display: none;
     transition: opacity 0.3s ease, visibility 0.3s ease; 
     transform: translateZ(0); 
 }
-.sidebar-overlay.open { opacity: 1; visibility: visible; }
+.sidebar-overlay.open { 
+    display: flex !important; 
+    pointer-events: auto !important; 
+    opacity: 1 !important; 
+    visibility: visible !important; 
+}
 
 .sidebar-menu { 
     position: absolute; top: 0; left: 0; 
@@ -957,6 +964,905 @@ header p { color: var(--gold); font-size: 13px; font-weight: 600; letter-spacing
 .sub-grade-names.stat-color-d { border-left-color: #64748b; }
 
 /* ========================================================= */
+/* TARGET HAFALAN AL-QUR'AN MINGGUAN & SURAH PICKER          */
+/* ========================================================= */
+
+.quran-day-nav {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 18px;
+    background: rgba(0, 0, 0, 0.4);
+    padding: 6px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.quran-day-pill {
+    flex: 1;
+    padding: 10px 4px;
+    border: none;
+    border-radius: 12px;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.quran-day-pill:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.quran-day-pill.active {
+    background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+    color: #000;
+    box-shadow: 0 4px 14px rgba(212, 175, 55, 0.4);
+}
+
+.admin-quran-day-pane {
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 16px;
+    padding: 18px 16px;
+    margin-bottom: 12px;
+}
+
+.btn-copy-surah {
+    background: rgba(212, 175, 55, 0.12);
+    border: 1px solid rgba(212, 175, 55, 0.35);
+    color: var(--gold);
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.btn-copy-surah:hover {
+    background: var(--gold);
+    color: #000;
+    box-shadow: 0 2px 8px rgba(212, 175, 55, 0.3);
+}
+
+/* Custom Floating Surah Selector */
+.surah-picker-wrap {
+    position: relative;
+    width: 100%;
+}
+
+.surah-picker-trigger {
+    width: 100%;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(0, 0, 0, 0.45);
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 12px 14px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.25s ease;
+}
+
+.surah-picker-trigger:hover,
+.surah-picker-trigger.active {
+    border-color: var(--gold);
+    background: rgba(0, 0, 0, 0.65);
+    box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.15);
+}
+
+.surah-picker-chevron {
+    color: var(--gold);
+    transition: transform 0.25s ease;
+    flex-shrink: 0;
+}
+
+.surah-picker-trigger.active .surah-picker-chevron {
+    transform: rotate(180deg);
+}
+
+.surah-picker-dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    width: 100%;
+    max-height: 290px;
+    background: rgba(2, 25, 17, 0.98);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(212, 175, 55, 0.4);
+    border-radius: 14px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.75), 0 0 20px rgba(212, 175, 55, 0.2);
+    z-index: 1500;
+    padding: 10px;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.surah-picker-dropdown.show {
+    display: flex;
+}
+
+.surah-picker-search {
+    width: 100%;
+    padding: 10px 12px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    color: #fff;
+    font-size: 13px;
+    outline: none;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.surah-picker-search:focus {
+    border-color: var(--gold);
+}
+
+.surah-picker-list {
+    max-height: 210px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding-right: 4px;
+}
+
+.surah-picker-item {
+    padding: 9px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.15s ease;
+}
+
+.surah-picker-item:hover {
+    background: rgba(212, 175, 55, 0.18);
+    color: var(--gold);
+    padding-left: 16px;
+}
+
+.surah-picker-item.selected {
+    background: var(--gold);
+    color: #000;
+    font-weight: 700;
+}
+
+.surah-item-arab {
+    font-family: 'Amiri', serif;
+    font-size: 16px;
+    color: var(--gold-light);
+}
+
+.surah-picker-item.selected .surah-item-arab {
+    color: #000;
+}
+
+.surah-item-meta {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-left: 6px;
+    font-weight: 500;
+}
+
+.surah-picker-item.selected .surah-item-meta {
+    color: rgba(0, 0, 0, 0.7);
+}
+
+/* Public Mading Day Tabs */
+.mading-day-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 22px;
+    background: rgba(0, 0, 0, 0.35);
+    padding: 5px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.mading-day-pill {
+    flex: 1;
+    padding: 10px 4px;
+    border: none;
+    border-radius: 12px;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.mading-day-pill:hover {
+    color: #fff;
+}
+
+.mading-day-pill.active {
+    background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+    color: #000;
+    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.35);
+}
+
+/* ========================================================= */
+/* FORM SMART SURAH & RENTANG AYAT (ADMIN JADWAL IMAM)       */
+/* ========================================================= */
+.imam-rakaat-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 14px;
+    margin-bottom: 8px;
+    gap: 8px;
+}
+
+.btn-toggle-input-mode {
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+    background: rgba(212, 175, 55, 0.12);
+    border: 1px solid rgba(212, 175, 55, 0.35);
+    color: var(--gold-light);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 5px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.btn-toggle-input-mode:hover {
+    background: rgba(212, 175, 55, 0.22);
+    border-color: var(--gold);
+    color: #fff;
+}
+
+.imam-rakaat-strips-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.imam-rakaat-strip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(0, 0, 0, 0.32);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 6px 12px;
+    gap: 10px;
+    transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.imam-rakaat-strip:hover {
+    border-color: rgba(212, 175, 55, 0.3);
+    background: rgba(0, 0, 0, 0.42);
+}
+
+.rakaat-strip-tag {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--gold);
+    white-space: nowrap;
+    letter-spacing: 0.3px;
+    flex-shrink: 0;
+}
+
+.imam-range-inputs {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.range-dash {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-weight: 700;
+    flex-shrink: 0;
+    user-select: none;
+}
+
+.admin-input-num {
+    width: 62px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    padding: 6px 4px;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    text-align: center;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    transition: all 0.2s ease;
+}
+
+.admin-input-num:focus {
+    outline: none;
+    border-color: var(--gold);
+    background: rgba(0, 0, 0, 0.6);
+    box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.2);
+}
+
+.admin-imam-day-pane,
+.admin-murajaah-day-pane {
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 16px;
+    padding: 16px 14px;
+    margin-bottom: 12px;
+}
+
+/* ========================================================= */
+/* SISTEM CUSTOM DROPDOWN PICKER (MURID & SURAH)            */
+/* ========================================================= */
+.student-picker-wrap,
+.surah-picker-wrap {
+    position: relative;
+    width: 100%;
+}
+
+.student-picker-trigger,
+.surah-picker-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 11px 14px;
+    background: rgba(0, 0, 0, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.student-picker-trigger:hover,
+.student-picker-trigger.active,
+.surah-picker-trigger:hover,
+.surah-picker-trigger.active {
+    border-color: var(--gold);
+    background: rgba(0, 0, 0, 0.65);
+    box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.15);
+}
+
+.student-picker-chevron,
+.surah-picker-chevron {
+    color: var(--gold);
+    transition: transform 0.25s ease;
+    flex-shrink: 0;
+}
+
+.student-picker-trigger.active .student-picker-chevron,
+.surah-picker-trigger.active .surah-picker-chevron {
+    transform: rotate(180deg);
+}
+
+.student-picker-dropdown,
+.surah-picker-dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    width: 100%;
+    max-height: 280px;
+    background: rgba(2, 25, 17, 0.98);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(212, 175, 55, 0.4);
+    border-radius: 14px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.75), 0 0 20px rgba(212, 175, 55, 0.2);
+    z-index: 1500;
+    padding: 10px;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.student-picker-dropdown.show,
+.surah-picker-dropdown.show {
+    display: flex;
+}
+
+.student-picker-search,
+.surah-picker-search {
+    width: 100%;
+    padding: 10px 12px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    color: #fff;
+    font-size: 13px;
+    outline: none;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.student-picker-search:focus,
+.surah-picker-search:focus {
+    border-color: var(--gold);
+}
+
+.student-picker-list,
+.surah-picker-list {
+    max-height: 200px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding-right: 4px;
+}
+
+.student-picker-item,
+.surah-picker-item {
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.15s ease;
+}
+
+.student-picker-item:hover,
+.surah-picker-item:hover {
+    background: rgba(212, 175, 55, 0.18);
+    color: var(--gold);
+    padding-left: 16px;
+}
+
+.surah-picker-num {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: rgba(212, 175, 55, 0.15);
+    border: 1px solid rgba(212, 175, 55, 0.4);
+    color: var(--gold-light);
+    font-size: 10.5px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.student-picker-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+    color: #000;
+    font-size: 11px;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.student-picker-avatar.mini {
+    width: 22px;
+    height: 22px;
+    font-size: 9px;
+    margin-right: 6px;
+}
+
+.student-picker-avatar.large {
+    width: 56px;
+    height: 56px;
+    font-size: 20px;
+    border: 2px solid rgba(212, 175, 55, 0.5);
+    box-shadow: 0 4px 16px rgba(212, 175, 55, 0.35);
+}
+
+/* ========================================================= */
+/* ROYAL ISLAMIC BADGE SYSTEM (JADWAL MURAJA'AH & IMAM)      */
+/* ========================================================= */
+
+/* Tab Kapsul Hari Mewah */
+.royal-day-tabs, .mading-day-tabs {
+    display: flex;
+    justify-content: space-between;
+    background: rgba(0, 0, 0, 0.45);
+    border: 1px solid rgba(212, 175, 55, 0.28);
+    border-radius: 40px;
+    padding: 4px;
+    margin-bottom: 20px;
+    gap: 4px;
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+.royal-day-pill, .mading-day-pill {
+    flex: 1;
+    background: transparent;
+    border: none;
+    border-radius: 30px;
+    padding: 8px 6px;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    text-align: center;
+}
+
+.royal-day-pill:hover, .mading-day-pill:hover {
+    color: var(--gold-light);
+    background: rgba(212, 175, 55, 0.08);
+}
+
+.royal-day-pill.active, .mading-day-pill.active {
+    background: linear-gradient(135deg, #ffd700 0%, #d4af37 50%, #aa820a 100%);
+    color: #021a12 !important;
+    font-weight: 800;
+    box-shadow: 0 4px 16px rgba(212, 175, 55, 0.45);
+    transform: translateY(-1px);
+}
+
+/* Transisi Pane Halus & Dinamis */
+.royal-pane, .public-murajaah-pane, .public-imam-pane {
+    animation: royalFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes royalFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.99);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Hero Profil Ananda / Petugas */
+.royal-hero-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 4px 0 14px;
+    position: relative;
+}
+
+/* Avatar Inisial Ananda (Elegan & Bersih, Tanpa Emoticon) */
+.royal-avatar-initials {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.25) 0%, rgba(1, 27, 19, 0.95) 100%);
+    border: 2px solid var(--gold);
+    box-shadow: 0 4px 16px rgba(212, 175, 55, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--gold-light);
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.royal-avatar-initials.imam {
+    border-color: #f59e0b;
+    box-shadow: 0 4px 16px rgba(245, 158, 11, 0.35);
+    color: #fef08a;
+}
+
+/* Pita Gelar Kehormatan */
+.royal-honor-ribbon {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(90deg, rgba(212, 175, 55, 0.08) 0%, rgba(212, 175, 55, 0.22) 50%, rgba(212, 175, 55, 0.08) 100%);
+    border: 1px solid rgba(212, 175, 55, 0.45);
+    border-radius: 30px;
+    padding: 5px 16px;
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--gold-light);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    margin-bottom: 8px;
+}
+
+.royal-honor-ribbon.imam {
+    border-color: rgba(245, 158, 11, 0.5);
+    color: #fef08a;
+}
+
+.royal-star {
+    color: var(--gold);
+    font-size: 10px;
+}
+
+/* Nama Ananda Gagah & Elegan */
+.royal-person-name {
+    font-size: 20px;
+    font-weight: 800;
+    color: #ffffff;
+    font-family: 'Lora', serif;
+    letter-spacing: 0.3px;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+    margin: 4px 0 2px;
+}
+
+/* Pembatas Daun / Bintang Emas */
+.royal-flourish {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    width: 55%;
+    margin: 8px auto 18px;
+}
+
+.royal-flourish::before,
+.royal-flourish::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.5), transparent);
+}
+
+.royal-flourish span {
+    color: var(--gold);
+    font-size: 10px;
+}
+
+/* ========================================================= */
+/* KARTU MURAJA'AH: ATMOSFER FAJAR (PAGI) & SENJA (SORE)     */
+/* ========================================================= */
+/* ========================================================= */
+/* SATU KANVAS HARMONIS (MURAJA'AH & IMAM STEPPER)           */
+/* ========================================================= */
+.royal-unified-canvas {
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid rgba(212, 175, 55, 0.22);
+    border-radius: 18px;
+    padding: 16px 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    transition: all 0.2s ease;
+}
+
+/* Sesi Muraja'ah dalam Satu Kanvas */
+.royal-canvas-section {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.royal-canvas-label {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: var(--gold);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.royal-canvas-value {
+    font-size: 15px;
+    font-weight: 700;
+    color: #ffffff;
+    font-family: 'Lora', serif;
+    padding-left: 2px;
+    word-break: normal;
+}
+
+.royal-canvas-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.25), transparent);
+    margin: 12px 0;
+}
+
+/* Alur Stepper Minimalis untuk Jadwal Imam */
+.royal-stepper-canvas {
+    position: relative;
+    padding: 16px 20px;
+}
+
+.royal-stepper-item {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding-bottom: 14px;
+}
+
+.royal-stepper-item:last-child {
+    padding-bottom: 0;
+}
+
+/* Garis Alur Vertikal Emas */
+.royal-stepper-item:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    left: 13px;
+    top: 28px;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(180deg, var(--gold) 0%, rgba(212, 175, 55, 0.2) 100%);
+    border-radius: 2px;
+}
+
+/* Node / Titik Nomor Raka'at */
+.royal-stepper-node {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.25) 0%, #011b13 100%);
+    border: 1.5px solid var(--gold);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--gold-light);
+    font-family: 'Lora', serif;
+    flex-shrink: 0;
+    box-shadow: 0 0 10px rgba(212, 175, 55, 0.35);
+    z-index: 1;
+}
+
+.royal-stepper-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.royal-stepper-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--gold-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 2px;
+}
+
+.royal-stepper-value {
+    font-size: 14.5px;
+    font-weight: 700;
+    color: #ffffff;
+    font-family: 'Lora', serif;
+    word-break: normal;
+}
+
+/* ========================================================= */
+/* TILAWAH LIVE VERTICAL BROADCAST TIMELINE                  */
+/* ========================================================= */
+.tilawah-timeline {
+    position: relative;
+    padding-left: 38px;
+    margin: 8px 0;
+}
+
+.tilawah-timeline::before {
+    content: '';
+    position: absolute;
+    left: 14px;
+    top: 15px;
+    bottom: 25px;
+    width: 2px;
+    background: linear-gradient(180deg, var(--gold), rgba(212, 175, 55, 0.2));
+    border-radius: 2px;
+}
+
+.tilawah-timeline-item {
+    position: relative;
+    padding-bottom: 24px;
+}
+
+.tilawah-timeline-item:last-child {
+    padding-bottom: 8px;
+}
+
+.tilawah-timeline-node {
+    position: absolute;
+    left: -38px;
+    top: 0;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: #021a12;
+    border: 2px solid var(--gold);
+    box-shadow: 0 0 12px rgba(212, 175, 55, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--gold);
+    z-index: 2;
+}
+
+.tilawah-timeline-content {
+    background: transparent;
+    padding: 0 0 4px 6px;
+}
+
+.tilawah-timeline-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 4px;
+}
+
+.tilawah-timeline-date {
+    font-size: 11px;
+    color: var(--gold-light);
+    font-weight: 600;
+}
+
+.tilawah-timeline-name {
+    font-size: 18px;
+    font-weight: 800;
+    color: #fff;
+    font-family: 'Lora', serif;
+    margin-bottom: 6px;
+    letter-spacing: 0.3px;
+}
+
+.tilawah-timeline-surah {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.05);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    border: 1px solid rgba(212, 175, 55, 0.25);
+}
+
+.tilawah-broadcast-strip {
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 1px dashed rgba(212, 175, 55, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.tilawah-broadcast-strip .icon {
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+.tilawah-broadcast-strip .text {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+
+.tilawah-broadcast-strip .text b {
+    color: var(--gold-light);
+}
+
+/* ========================================================= */
 /* OPTIMASI PERFORMA TINGKAT TINGGI UNTUK HP                 */
 /* ========================================================= */
 @media (max-width: 768px) {
@@ -1024,8 +1930,164 @@ header p { color: var(--gold); font-size: 13px; font-weight: 600; letter-spacing
     #statsChartContainer > div:first-child > div:nth-child(2) {
         font-size: 26px !important;
     }
-    /* Stats text link — compact on mobile */
     .stats-text-link {
         font-size: 11px !important;
+    }
+
+    /* MADING MODAL — Anti-Sesak di Layar HP */
+    #madingModal {
+        padding: 8px !important;
+    }
+    #madingModal .modal-content {
+        padding: 18px 12px 18px !important;
+        border-radius: 20px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+    #madingModal .close-btn {
+        top: 12px !important;
+        right: 12px !important;
+        width: 30px !important;
+        height: 30px !important;
+        font-size: 15px !important;
+        z-index: 20 !important;
+    }
+    #madingTitleText {
+        font-size: 16px !important;
+        margin-bottom: 12px !important;
+        padding: 0 36px !important; /* Simetris sempurna: penyeimbang tombol close di kanan */
+        text-align: center !important;
+    }
+    #editMadingTitle {
+        font-size: 15px !important;
+        padding: 8px 36px !important; /* Simetris sempurna */
+        margin-bottom: 12px !important;
+        height: 38px !important;
+        border-radius: 10px !important;
+        text-align: center !important;
+    }
+    .admin-quran-day-pane,
+    .admin-imam-day-pane,
+    .admin-murajaah-day-pane {
+        padding: 12px 10px !important;
+        border-radius: 14px !important;
+        margin-bottom: 8px !important;
+    }
+    .quran-day-nav {
+        gap: 3px !important;
+        padding: 3px !important;
+        margin-bottom: 10px !important;
+    }
+    .quran-day-pill {
+        padding: 7px 2px !important;
+        font-size: 11px !important;
+        border-radius: 8px !important;
+    }
+    .surah-picker-trigger {
+        padding: 8px 10px !important;
+        font-size: 12.5px !important;
+    }
+    .surah-picker-dropdown {
+        max-height: 230px !important;
+        padding: 6px !important;
+    }
+    .surah-picker-item {
+        padding: 7px 10px !important;
+        font-size: 12px !important;
+    }
+    .imam-rakaat-strip {
+        padding: 5px 8px !important;
+        gap: 6px !important;
+    }
+    .rakaat-strip-tag {
+        font-size: 11px !important;
+    }
+    .admin-input-num {
+        width: 52px !important;
+        font-size: 12px !important;
+        padding: 4px 2px !important;
+    }
+    .btn-copy-surah {
+        padding: 4px 8px !important;
+        font-size: 10px !important;
+        border-radius: 6px !important;
+    }
+    .btn-toggle-input-mode {
+        padding: 4px 8px !important;
+        font-size: 10px !important;
+        border-radius: 6px !important;
+    }
+    #btnSaveMading {
+        padding: 12px !important;
+        font-size: 13.5px !important;
+        margin-top: 14px !important;
+        border-radius: 12px !important;
+    }
+    .royal-day-tabs, .mading-day-tabs {
+        margin-bottom: 12px !important;
+        gap: 2px !important;
+        padding: 2px !important;
+    }
+    .royal-day-pill, .mading-day-pill {
+        padding: 6px 2px !important;
+        font-size: 11px !important;
+    }
+    .royal-hero-card {
+        padding: 2px 0 8px !important;
+    }
+    .royal-avatar-initials {
+        width: 44px !important;
+        height: 44px !important;
+        font-size: 15px !important;
+        margin-bottom: 6px !important;
+    }
+    .royal-honor-ribbon {
+        font-size: 9px !important;
+        padding: 3px 10px !important;
+        letter-spacing: 0.8px !important;
+        margin-bottom: 4px !important;
+    }
+    .royal-person-name {
+        font-size: 16px !important;
+        font-weight: 700 !important;
+    }
+    .royal-flourish {
+        margin: 4px auto 10px !important;
+        width: 50% !important;
+    }
+    .royal-unified-canvas {
+        padding: 12px 14px !important;
+        border-radius: 14px !important;
+    }
+    .royal-canvas-label {
+        font-size: 11px !important;
+    }
+    .royal-canvas-value {
+        font-size: 13.5px !important;
+    }
+    .royal-canvas-divider {
+        margin: 10px 0 !important;
+    }
+    .royal-stepper-canvas {
+        padding: 12px 12px !important;
+    }
+    .royal-stepper-item {
+        gap: 12px !important;
+        padding-bottom: 12px !important;
+    }
+    .royal-stepper-item:not(:last-child)::before {
+        left: 11px !important;
+        top: 24px !important;
+    }
+    .royal-stepper-node {
+        width: 24px !important;
+        height: 24px !important;
+        font-size: 11.5px !important;
+    }
+    .royal-stepper-label {
+        font-size: 9.5px !important;
+    }
+    .royal-stepper-value {
+        font-size: 13px !important;
     }
 }
