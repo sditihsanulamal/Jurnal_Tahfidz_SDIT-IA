@@ -219,15 +219,31 @@ export const DATA_114_SURAH = [
 ];
 window.DATA_114_SURAH = DATA_114_SURAH;
 
-// Helper: Hari aktif hafalan Qur'an (Senin - Kamis)
+// Helper: Hari aktif hafalan Qur'an dengan Cutoff Pukul 16.00 (Sore)
 window.getHariQuranAktif = () => {
     const d = new Date();
-    const day = d.getDay(); // 0=Min, 1=Sen, 2=Sel, 3=Rab, 4=Kam, 5=Jum, 6=Sab
-    if (day === 1) return 'senin';
-    if (day === 2) return 'selasa';
-    if (day === 3) return 'rabu';
-    if (day === 4) return 'kamis';
-    return 'kamis'; // default Jumat, Sabtu, Minggu ke Kamis
+    const day = d.getDay(); // 0=Ahad, 1=Senin, 2=Selasa, 3=Rabu, 4=Kamis, 5=Jumat, 6=Sabtu
+    const isAfterCutoff = d.getHours() >= 16; // Pukul 16.00 ke atas beralih ke persiapan hari berikutnya
+
+    if (day === 0) {
+        // Ahad: Sebelum 16.00 masih Kamis, Pukul 16.00 ke atas berganti ke persiapan Senin
+        return isAfterCutoff ? 'senin' : 'kamis';
+    }
+    if (day === 1) {
+        // Senin: Sebelum 16.00 setoran Senin, Pukul 16.00 ke atas persiapan Selasa
+        return isAfterCutoff ? 'selasa' : 'senin';
+    }
+    if (day === 2) {
+        // Selasa: Sebelum 16.00 setoran Selasa, Pukul 16.00 ke atas persiapan Rabu
+        return isAfterCutoff ? 'rabu' : 'selasa';
+    }
+    if (day === 3) {
+        // Rabu: Sebelum 16.00 setoran Rabu, Pukul 16.00 ke atas persiapan Kamis
+        return isAfterCutoff ? 'kamis' : 'rabu';
+    }
+    // Kamis, Jumat, Sabtu:
+    // Kamis s/d Ahad sebelum 16.00 tetap menampilkan Kamis (Opsi A)
+    return 'kamis';
 };
 
 // Helper: Hari aktif sekolah (Senin - Jumat) untuk Muraja'ah & Imam Sholat
@@ -1097,7 +1113,17 @@ window.openModal = (index) => {
     const statusHarian = sudahDinilaiHariIni ? (murid.setoranHarian || 'belum') : 'belum';
 
     window.pilihSetoranHarian(statusHarian);
-    document.getElementById('editQuranTarget').value = murid.quranTarget || "";
+    let targetQuranVal = murid.quranTarget || "";
+    if (!targetQuranVal && dataMadingDinamis['target-quran']?.fields) {
+        const madingQuran = dataMadingDinamis['target-quran'].fields;
+        const curDay = window.getHariQuranAktif();
+        const daySurah = madingQuran[curDay + '_surah'];
+        const dayAyat = madingQuran[curDay + '_ayat'];
+        if (daySurah) {
+            targetQuranVal = dayAyat ? `Surah ${daySurah} Ayat ${dayAyat}` : `Surah ${daySurah}`;
+        }
+    }
+    document.getElementById('editQuranTarget').value = targetQuranVal;
     document.getElementById('editQuranRealisasi').value = murid.quranRealisasi || "-";
     document.getElementById('editStatusQuran').value = qStatus;
 
