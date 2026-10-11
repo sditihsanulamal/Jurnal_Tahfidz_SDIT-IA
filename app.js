@@ -378,10 +378,15 @@ window.validasiBatasAyat = (day) => {
 
     const s = DATA_114_SURAH.find(item => item.nama.toLowerCase() === surahVal.toLowerCase());
     if (s) {
-        ayatInput.max = s.ayat;
-        const val = parseInt(ayatInput.value, 10);
-        if (val > s.ayat) {
-            hintEl.innerHTML = `<span style="color:#ef4444; font-weight:700;">⚠️ Melebihi batas! Surah ${s.nama} hanya memiliki ${s.ayat} ayat.</span>`;
+        const valStr = ayatInput.value || '';
+        const nums = valStr.match(/\d+/g);
+        if (nums && nums.length > 0) {
+            const maxNum = Math.max(...nums.map(n => parseInt(n, 10)));
+            if (maxNum > s.ayat) {
+                hintEl.innerHTML = `<span style="color:#ef4444; font-weight:700;">⚠️ Melebihi batas! Surah ${s.nama} hanya memiliki ${s.ayat} ayat (ayat ${maxNum} tidak ada).</span>`;
+            } else {
+                hintEl.innerText = `Total: ${s.ayat} ayat`;
+            }
         } else {
             hintEl.innerText = `Total: ${s.ayat} ayat`;
         }
@@ -1274,8 +1279,14 @@ window.renderMadingHtml = (id, fields) => {
         const activeDay = window.getHariQuranAktif();
         const hasNewFormat = !!(fields.senin_surah || fields.selasa_surah || fields.rabu_surah || fields.kamis_surah);
         const surah = fields[activeDay + '_surah'] || (!hasNewFormat ? (fields.surah || '') : '');
-        const rawAyat = fields[activeDay + '_ayat'] || (!hasNewFormat ? (fields.ayat ? fields.ayat.replace(/[^0-9]/g, '') : '') : '');
-        const ayatStr = rawAyat ? ('Ayat ' + rawAyat) : (!hasNewFormat && fields.ayat ? fields.ayat : '-');
+        const rawAyat = fields[activeDay + '_ayat'] || (!hasNewFormat ? (fields.ayat ? fields.ayat.replace(/^ayat\s*/i, '').trim() : '') : '');
+        let ayatStr = '-';
+        if (rawAyat) {
+            const cleanAyat = rawAyat.replace(/^ayat\s*/i, '').trim();
+            ayatStr = cleanAyat ? ('Ayat ' + cleanAyat) : '-';
+        } else if (!hasNewFormat && fields.ayat) {
+            ayatStr = fields.ayat;
+        }
         const audio = fields[activeDay + '_audio'] || (!hasNewFormat ? (fields.audio || '') : '');
 
         const cleanSurahName = surah.replace(/^surah\s+/i, '').trim();
@@ -1530,7 +1541,7 @@ window.openMading = (id) => {
             ['senin', 'selasa', 'rabu', 'kamis'].forEach(day => {
                 window.initSurahPicker(day);
                 const surahVal = f[day + '_surah'] || (day === 'senin' ? (f.surah || '') : '');
-                const rawAyat = f[day + '_ayat'] || (day === 'senin' ? (f.ayat ? f.ayat.replace(/[^0-9]/g, '') : '') : '');
+                const rawAyat = f[day + '_ayat'] || (day === 'senin' ? (f.ayat ? f.ayat.replace(/^ayat\s*/i, '').trim() : '') : '');
                 const audioVal = f[day + '_audio'] || (day === 'senin' ? (f.audio || '') : '');
 
                 window.setSurahPickerVal(day, surahVal);
@@ -1709,8 +1720,9 @@ window.simpanDataMading = async () => {
         const activeAyat = newFields[hariIni + '_ayat'] || newFields.senin_ayat || '';
         const activeAudio = newFields[hariIni + '_audio'] || newFields.senin_audio || '';
 
+        const cleanAyat = activeAyat.replace(/^ayat\s*/i, '').trim();
         newFields.surah = activeSurah;
-        newFields.ayat = activeAyat ? ('Ayat ' + activeAyat) : '';
+        newFields.ayat = cleanAyat ? ('Ayat ' + cleanAyat) : '';
         newFields.audio = activeAudio;
     } else if (id === 'target-hadits') {
         const hItems = Array.from(document.getElementById('container-hadits').children).map(item => ({
