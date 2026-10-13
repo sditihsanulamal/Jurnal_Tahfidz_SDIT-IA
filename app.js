@@ -258,6 +258,27 @@ window.getHariSekolahAktif = () => {
     return 'senin'; // default Sabtu, Minggu ke Senin (persiapan pekan baru)
 };
 
+// Helper: Dapatkan string target Qur'an aktif dari Mading (berjalan otomatis sesuai hari & jam cut-off 16.00)
+window.getTargetQuranMadingAktif = () => {
+    if (!dataMadingDinamis || !dataMadingDinamis['target-quran']?.fields) return '';
+    const fields = dataMadingDinamis['target-quran'].fields;
+    const curDay = window.getHariQuranAktif();
+    const hasNewFormat = !!(fields.senin_surah || fields.selasa_surah || fields.rabu_surah || fields.kamis_surah);
+
+    const rawSurah = fields[curDay + '_surah'] || (!hasNewFormat ? (fields.surah || '') : '');
+    const rawAyat = fields[curDay + '_ayat'] || (!hasNewFormat ? (fields.ayat ? fields.ayat.replace(/^ayat\s*/i, '').trim() : '') : '');
+
+    const cleanSurah = (rawSurah || '').replace(/^surah\s*/i, '').trim();
+    const cleanAyat = (rawAyat || '').replace(/^ayat\s*/i, '').trim();
+
+    if (!cleanSurah) return '';
+    const surahText = 'Surah ' + cleanSurah;
+    if (cleanAyat) {
+        return `${surahText} Ayat ${cleanAyat}`;
+    }
+    return surahText;
+};
+
 // ============================================================
 // SISTEM SURAH PICKER & FORM TARGET MINGGUAN
 // ============================================================
@@ -925,6 +946,16 @@ function handleMadingSnapshot(snapshot) {
         lastGaleriSig = sig;
         renderGaleri(f);
     }
+
+    // ✅ Jika modal detail ananda sedang terbuka, pastikan Target Qur'an langsung sinkron
+    const modalMurid = document.getElementById('progressModal');
+    if (modalMurid && modalMurid.classList.contains('open')) {
+        const targetEl = document.getElementById('editQuranTarget');
+        if (targetEl) {
+            const madingTarget = window.getTargetQuranMadingAktif();
+            if (madingTarget) targetEl.value = madingTarget;
+        }
+    }
 }
 
 function handleMuridSnapshot(snapshot) {
@@ -1118,16 +1149,9 @@ window.openModal = (index) => {
     const statusHarian = sudahDinilaiHariIni ? (murid.setoranHarian || 'belum') : 'belum';
 
     window.pilihSetoranHarian(statusHarian);
-    let targetQuranVal = murid.quranTarget || "";
-    if (!targetQuranVal && dataMadingDinamis['target-quran']?.fields) {
-        const madingQuran = dataMadingDinamis['target-quran'].fields;
-        const curDay = window.getHariQuranAktif();
-        const daySurah = madingQuran[curDay + '_surah'];
-        const dayAyat = madingQuran[curDay + '_ayat'];
-        if (daySurah) {
-            targetQuranVal = dayAyat ? `Surah ${daySurah} Ayat ${dayAyat}` : `Surah ${daySurah}`;
-        }
-    }
+    // ✅ Target Qur'an selalu sinkron dengan target mading aktif hari ini/besok (cut-off 16.00)
+    const targetMadingAktif = window.getTargetQuranMadingAktif();
+    const targetQuranVal = targetMadingAktif || murid.quranTarget || "";
     document.getElementById('editQuranTarget').value = targetQuranVal;
     document.getElementById('editQuranRealisasi').value = murid.quranRealisasi || "-";
     document.getElementById('editStatusQuran').value = qStatus;
@@ -1170,11 +1194,13 @@ window.openModal = (index) => {
 
     // Badge: admin pakai nilai hari ini (bisa kosong), publik pakai nilai permanen
     setBadge('badgeQuran', isAdmin ? qStatus : qStatusPublik, isAdmin ? qNilaiAngka : qNilaiAngkaPublik);
-    document.getElementById('editHaditsTarget').value = murid.haditsTarget || "";
+    const madingHadits = (dataMadingDinamis['target-hadits']?.fields?.listHadits || []).map(h => h.judul).filter(Boolean).join(" & ").trim();
+    const madingDoa = (dataMadingDinamis['target-hadits']?.fields?.listDoa || []).map(d => d.judul).filter(Boolean).join(" & ").trim();
+    document.getElementById('editHaditsTarget').value = murid.haditsTarget || madingHadits || "";
     document.getElementById('editHaditsRealisasi').value = murid.haditsRealisasi || "-";
     document.getElementById('editStatusHadits').value = hStatus;
     setBadge('badgeHadits', isAdmin ? hStatus : hStatusPublik, isAdmin ? hNilaiAngka : hNilaiAngkaPublik);
-    document.getElementById('editDoaTarget').value = murid.doaTarget || "";
+    document.getElementById('editDoaTarget').value = murid.doaTarget || madingDoa || "";
     document.getElementById('editDoaRealisasi').value = murid.doaRealisasi || "-";
     document.getElementById('editStatusDoa').value = dStatus;
     setBadge('badgeDoa', isAdmin ? dStatus : dStatusPublik, isAdmin ? dNilaiAngka : dNilaiAngkaPublik);
@@ -1776,10 +1802,13 @@ window.simpanDataMading = async () => {
 
         if (id === 'target-quran') {
             const batch = writeBatch(db);
-            const targetGabungan = newFields.surah && newFields.ayat 
-                ? ('Surah ' + newFields.surah + ' ' + newFields.ayat) 
-                : (newFields.surah ? ('Surah ' + newFields.surah) : '');
+            const cleanSurah = (newFields.surah || '').replace(/^surah\s*/i, '').trim();
+            const cleanAyat = (newFields.ayat || '').replace(/^ayat\s*/i, '').trim();
+            const targetGabungan = cleanSurah 
+                ? ('Surah ' + cleanSurah + (cleanAyat ? ' Ayat ' + cleanAyat : '')) 
+                : '';
             dataMuridDinamis.forEach((murid) => {
+                murid.quranTarget = targetGabungan;
                 batch.update(doc(db, koleksiMurid, murid.id), { quranTarget: targetGabungan });
             });
             await batch.commit();
