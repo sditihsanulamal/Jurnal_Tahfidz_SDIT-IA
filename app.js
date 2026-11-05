@@ -953,7 +953,18 @@ function handleMadingSnapshot(snapshot) {
         const targetEl = document.getElementById('editQuranTarget');
         if (targetEl) {
             const madingTarget = window.getTargetQuranMadingAktif();
-            if (madingTarget) targetEl.value = madingTarget;
+            if (madingTarget) {
+                targetEl.value = madingTarget;
+                const dispEl = document.getElementById('displayQuranTarget');
+                if (dispEl && typeof ekstrakSurahDanAyatModal === 'function') {
+                    const parsed = ekstrakSurahDanAyatModal(madingTarget);
+                    if (parsed) {
+                        dispEl.innerHTML = 'Surah ' + parsed.namaSurah + ' <span class="target-ayat-accent">: Ayat ' + parsed.ayat + '</span>';
+                    } else {
+                        dispEl.innerHTML = madingTarget;
+                    }
+                }
+            }
         }
     }
 }
@@ -964,6 +975,9 @@ function handleMuridSnapshot(snapshot) {
         snapshot.forEach((docSnap) => { dataMuridDinamis.push({ id: docSnap.id, ...docSnap.data() }); });
         dataMuridDinamis.sort((a, b) => a.nama.localeCompare(b.nama));
         window.renderMurid();
+        if (urlParams.has('openStats') || urlParams.get('stats') === '1') {
+            window.openStatsModal();
+        }
     } else {
         document.getElementById('muridList').innerHTML = '<div style="text-align:center; color:var(--gold-muted); margin-top:40px; font-weight:500; grid-column:1/-1;">Belum ada data murid untuk kelas ' + window.kelasTarget + '.<br>Silakan tambahkan data via halaman Setup Murid.</div>';
     }
@@ -1020,10 +1034,17 @@ window.renderMurid = () => {
         let hariIniStr = window.getTanggalHariIni();
         let statusHarian = (murid.tanggalSetor === hariIniStr) ? (murid.setoranHarian || "belum") : "belum";
         let glowClass = (statusHarian === 'sudah') ? 'sudah-setor' : '';
+        let ribbonHtml = (statusHarian === 'sudah') 
+            ? '<div class="diagonal-sash-container"><div class="diagonal-sash-ribbon">✓ SETOR</div></div>' 
+            : '';
+        let didoakanHariIni = localStorage.getItem('doa_ananda_' + murid.id + '_' + hariIniStr) === '1';
+        let doaBadgeHtml = didoakanHariIni ? '<span class="badge-doa-glow" title="Telah Didoakan Orang Tua Hari Ini">🤲</span>' : '';
+
         cards.push('<div class="glass-panel murid-card ' + glowClass + '" onclick="window.openModal(' + index + ')">'
+            + ribbonHtml
             + '<div class="avatar">' + window.getInitials(murid.nama) + '</div>'
             + '<div class="murid-info">'
-            + '<div class="murid-nama">' + murid.nama + '</div>'
+            + '<div class="murid-nama"><span>' + murid.nama + '</span>' + doaBadgeHtml + '</div>'
             + '<div class="status-dots">'
             + '<span class="dot ' + cssQ + '" title="Qur\'an"></span>'
             + '<span class="dot ' + cssH + '" title="Hadits"></span>'
@@ -1112,25 +1133,258 @@ const setBadge = (elementId, status, nilaiAngka) => {
     }
 };
 
+
+/* ==========================================================================
+   MAJESTIC MUTABA'AH HELPER STATE & CONTROLS (SDIT IHSANUL AMAL)
+   ========================================================================== */
+let activeModalSurahIndex = 0;
+let activeModalSurahName = "Al-Baqarah";
+let activeModalCurrentAyat = 1;
+let activeModalTargetAyat = 1;
+let activeModalIsMurajaah = false;
+
+function ekstrakSurahDanAyatModal(str) {
+    if (!str || str === '-') return null;
+    let teksBersih = str.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+    teksBersih = teksBersih.replace('mujadalah', 'mujadilah')
+        .replace('baqaroh', 'baqarah')
+        .replace('fatehah', 'fatihah')
+        .replace('imron', 'imran')
+        .replace('maidoh', 'maidah')
+        .replace('dhuha', 'duha')
+        .replace('thariq', 'tariq')
+        .replace('thaahaa', 'taha').replace('thaha', 'taha')
+        .replace('sajadah', 'sajdah');
+
+    let indexSurah = -1;
+    let panjangKecocokan = 0;
+    for (let i = 0; i < DATA_114_SURAH.length; i++) {
+        let namaNormal = DATA_114_SURAH[i].nama.toLowerCase().replace(/[^a-z]/g, '');
+        if (teksBersih.includes(namaNormal) && namaNormal.length > panjangKecocokan) {
+            indexSurah = i;
+            panjangKecocokan = namaNormal.length;
+        }
+    }
+
+    let angkaMatch = str.match(/(\d+)(?!.*\d)/);
+    let ayatSekarang = angkaMatch ? parseInt(angkaMatch[0], 10) : 0;
+
+    if (indexSurah !== -1 && ayatSekarang > 0) {
+        return { indexSurah, ayat: ayatSekarang, namaSurah: DATA_114_SURAH[indexSurah].nama };
+    }
+    return null;
+}
+
+function updateQuranGaugeAndDisplay() {
+    const dialLabel = document.getElementById('dialSurahLabel');
+    if (dialLabel) dialLabel.innerText = 'Surah ' + activeModalSurahName;
+    const dispAyat = document.getElementById('displayAyatNum');
+    if (dispAyat) dispAyat.innerText = activeModalCurrentAyat;
+
+    const realisasiStr = 'Surah ' + activeModalSurahName + ' ayat ' + activeModalCurrentAyat + (activeModalIsMurajaah ? " (Muraja'ah)" : "");
+    const qRealisasiInput = document.getElementById('editQuranRealisasi');
+    if (qRealisasiInput) qRealisasiInput.value = realisasiStr;
+    const txtWali = document.getElementById('txtWaliQuranSetor');
+    if (txtWali) txtWali.innerText = realisasiStr;
+
+    let pct = 0;
+    let selisih = 0;
+    if (activeModalTargetAyat > 0) {
+        pct = Math.min(100, Math.round((activeModalCurrentAyat / activeModalTargetAyat) * 100));
+        selisih = activeModalTargetAyat - activeModalCurrentAyat;
+    }
+    const bar = document.getElementById('quranProgressBar');
+    if (bar) bar.style.width = pct + '%';
+    const lblPct = document.getElementById('lblProgressPct');
+    if (lblPct) lblPct.innerHTML = pct + '% <span>Tercapai</span>';
+    const lblStatus = document.getElementById('lblProgressStatus');
+    if (lblStatus) {
+        if (selisih > 0) {
+            lblStatus.innerHTML = 'Selisih <strong style="color:#ffffff;">' + selisih + ' Ayat</strong> Menuju Target';
+        } else if (selisih === 0) {
+            lblStatus.innerHTML = '<strong style="color:#fef08a;">Tepat Sesuai Target Kelas! 🎯</strong>';
+        } else {
+            lblStatus.innerHTML = '<strong style="color:#34d399;">Melampaui Target (+ ' + Math.abs(selisih) + ' Ayat) 🌟</strong>';
+        }
+    }
+}
+
+
+window.editAyatManual = () => {
+    const cur = activeModalCurrentAyat || 1;
+    const input = prompt("Masukkan nomor ayat yang disetorkan ananda:", cur);
+    if (input !== null && input.trim() !== "") {
+        const num = parseInt(input.trim(), 10);
+        if (!isNaN(num) && num > 0) {
+            activeModalCurrentAyat = num;
+            updateQuranGaugeAndDisplay();
+        }
+    }
+};
+
+window.stepAyat = (delta) => {
+    activeModalCurrentAyat = Math.max(1, activeModalCurrentAyat + delta);
+    updateQuranGaugeAndDisplay();
+};
+
+window.toggleMurajaahModal = () => {
+    activeModalIsMurajaah = !activeModalIsMurajaah;
+    const btnMur = document.getElementById('btnMurajaah');
+    if (btnMur) btnMur.classList.toggle('murajaah-active', activeModalIsMurajaah);
+    updateQuranGaugeAndDisplay();
+};
+
+window.switchSubject = (subject, btn) => {
+    ['quran', 'hadits', 'doa'].forEach(s => {
+        const deck = document.getElementById('deck' + s.charAt(0).toUpperCase() + s.slice(1));
+        const tab = document.getElementById('tabBtn-' + s);
+        if (deck) deck.style.display = (s === subject) ? 'block' : 'none';
+        if (tab) {
+            if (s === subject) {
+                tab.classList.add('active');
+            } else {
+                tab.classList.remove('active');
+            }
+        }
+    });
+};
+
+window.syncHaditsManual = (val) => {
+    const el = document.getElementById('txtWaliHaditsSetor');
+    if (el) el.innerText = val || '-';
+};
+
+window.syncDoaManual = (val) => {
+    const el = document.getElementById('txtWaliDoaSetor');
+    if (el) el.innerText = val || '-';
+};
+
+window.openModalDoa = () => {
+    const m = document.getElementById('modalDoa');
+    if (!m) return;
+    requestAnimationFrame(() => {
+        m.classList.add('open');
+    });
+};
+
+window.closeModalDoa = () => {
+    const m = document.getElementById('modalDoa');
+    if (m) m.classList.remove('open');
+};
+
+let _bottomSheetTimer = null;
+
+window.openBottomSheetDoa = (namaAnanda) => {
+    const sheet = document.getElementById('bottomSheetDoaFeedback');
+    if (!sheet) return;
+    const nameEl = document.getElementById('doaNamaAnanda');
+    if (nameEl) nameEl.textContent = namaAnanda || 'Ananda';
+
+    clearTimeout(_bottomSheetTimer);
+    requestAnimationFrame(() => {
+        sheet.classList.add('is-visible');
+    });
+
+    // Auto dismiss after 6.5s if not closed manually
+    _bottomSheetTimer = setTimeout(() => {
+        window.closeBottomSheetDoa();
+    }, 6500);
+};
+
+window.closeBottomSheetDoa = () => {
+    const sheet = document.getElementById('bottomSheetDoaFeedback');
+    if (sheet) sheet.classList.remove('is-visible');
+    clearTimeout(_bottomSheetTimer);
+};
+
+window.kirimDoaOrangTua = () => {
+    window.closeModalDoa();
+    const idMurid = document.getElementById('editId').value;
+    const namaMurid = document.getElementById('modalNama') ? document.getElementById('modalNama').innerText : 'Ananda';
+    const hariIni = window.getTanggalHariIni();
+    if (idMurid) {
+        localStorage.setItem('doa_ananda_' + idMurid + '_' + hariIni, '1');
+    }
+    const tRow = document.getElementById('tandaDidoakanRow');
+    if (tRow) tRow.style.display = 'block';
+
+    if (window.renderMurid) window.renderMurid();
+
+    // Munculkan Bottom-Sheet Berkah menggantikan alert browser
+    setTimeout(() => {
+        window.openBottomSheetDoa(namaMurid);
+    }, 120);
+};
+
+
+function getGradeFromScore(num) {
+    num = parseInt(num, 10);
+    if (isNaN(num)) return 'A';
+    if (num >= 93) return 'A';
+    if (num >= 84) return 'B';
+    if (num >= 75) return 'C';
+    return 'D';
+}
+
+window.populateGradeDropdown = (subject, grade) => {
+    let arr = [];
+    if (grade === 'A') {
+        for (let i = 100; i >= 93; i--) arr.push(i);
+    } else if (grade === 'B') {
+        for (let i = 92; i >= 84; i--) arr.push(i);
+    } else if (grade === 'C') {
+        for (let i = 83; i >= 75; i--) arr.push(i);
+    } else if (grade === 'D') {
+        for (let i = 74; i >= 60; i--) arr.push(i);
+    }
+
+    let listId = 'customDropdownList';
+    let selectFn = 'window.selectCustomNilai';
+    if (subject === 'hadits') {
+        listId = 'haditsDropdownList';
+        selectFn = 'window.selectHaditsNilai';
+    } else if (subject === 'doa') {
+        listId = 'doaDropdownList';
+        selectFn = 'window.selectDoaNilai';
+    }
+
+    let html = '';
+    arr.forEach(num => {
+        html += `<div class="custom-dropdown-item" onclick="${selectFn}(${num})">${num}</div>`;
+    });
+    if (grade === 'D') {
+        html += `<div class="custom-dropdown-item tidak-setor-item" onclick="window.pilihTidakSetor('${subject}')">❌ Tidak Setor Sama Sekali</div>`;
+    }
+
+    const listEl = document.getElementById(listId);
+    if (listEl) listEl.innerHTML = html;
+};
+
 window.openModal = (index) => {
     const murid = dataMuridDinamis[index];
     document.getElementById('modalNama').innerText = murid.nama;
     document.getElementById('modalInitials').innerText = window.getInitials(murid.nama);
     document.getElementById('editId').value = murid.id;
 
+    // Reset Deck ke Al-Qur'an
+    window.switchSubject('quran');
+
     const hariIni = window.getTanggalHariIni();
 
-    // ✅ SETIAP mata pelajaran punya tanggal setor sendiri.
-    // Qur'an bisa reset setiap hari, Hadits/Doa hanya reset di hari Jumat.
-    // Ini mencegah nilai lama terhapus hanya karena mata pelajaran lain diisi.
+    // Check status doa orang tua hari ini
+    const tRow = document.getElementById('tandaDidoakanRow');
+    if (tRow) {
+        const didoakan = localStorage.getItem('doa_ananda_' + murid.id + '_' + hariIni) === '1';
+        tRow.style.display = didoakan ? 'block' : 'none';
+    }
+
+    // Tanggal setor per mapel
     const sudahSetorQuranHariIni  = (murid.tanggalSetorQuran  || murid.tanggalSetor || '') === hariIni;
     const sudahSetorHaditsHariIni = (murid.tanggalSetorHadits || murid.tanggalSetor || '') === hariIni;
     const sudahSetorDoaHariIni    = (murid.tanggalSetorDoa    || murid.tanggalSetor || '') === hariIni;
-
-    // Master flag untuk badge setoranHarian (sesuai tanggalSetor utama)
     const sudahDinilaiHariIni = (murid.tanggalSetor === hariIni);
 
-    // Mode admin: nilai per subjek hanya tampil jika tanggal subjek tersebut = hari ini
     const qStatus    = isAdmin ? (sudahSetorQuranHariIni  ? (murid.quranStatus  || 'belum') : 'belum') : (murid.quranStatus  || 'belum');
     const qNilaiAngka= isAdmin ? (sudahSetorQuranHariIni  ? (murid.quranNilaiAngka  || '') : '') : (murid.quranNilaiAngka  || '');
     const hStatus    = isAdmin ? (sudahSetorHaditsHariIni ? (murid.haditsStatus || 'belum') : 'belum') : (murid.haditsStatus || 'belum');
@@ -1138,7 +1392,6 @@ window.openModal = (index) => {
     const dStatus    = isAdmin ? (sudahSetorDoaHariIni    ? (murid.doaStatus    || 'belum') : 'belum') : (murid.doaStatus    || 'belum');
     const dNilaiAngka= isAdmin ? (sudahSetorDoaHariIni    ? (murid.doaNilaiAngka    || '') : '') : (murid.doaNilaiAngka    || '');
 
-    // Alias untuk mode publik (wali murid) — sama dengan nilai di DB
     const qStatusPublik = murid.quranStatus || 'belum';
     const qNilaiAngkaPublik = murid.quranNilaiAngka || '';
     const hStatusPublik = murid.haditsStatus || 'belum';
@@ -1147,84 +1400,217 @@ window.openModal = (index) => {
     const dNilaiAngkaPublik = murid.doaNilaiAngka || '';
 
     const statusHarian = sudahDinilaiHariIni ? (murid.setoranHarian || 'belum') : 'belum';
-
     window.pilihSetoranHarian(statusHarian);
-    // ✅ Target Qur'an selalu sinkron dengan target mading aktif hari ini/besok (cut-off 16.00)
+
+    // ==========================================
+    // 1. DATA AL-QUR'AN (MASTHEAD, GAUGE & DIAL)
+    // ==========================================
     const targetMadingAktif = window.getTargetQuranMadingAktif();
     const targetQuranVal = targetMadingAktif || murid.quranTarget || "";
     document.getElementById('editQuranTarget').value = targetQuranVal;
-    document.getElementById('editQuranRealisasi').value = murid.quranRealisasi || "-";
+
+    const realisasiVal = murid.quranRealisasi || "";
+    document.getElementById('editQuranRealisasi').value = realisasiVal || "-";
     document.getElementById('editStatusQuran').value = qStatus;
 
-    if (isAdmin && ['A', 'B', 'C', 'D', 'tidakSetor'].includes(qStatus) && qStatus !== 'belum') {
-        if (qStatus === 'tidakSetor') {
+    // Parsing Target
+    const parsedTarget = ekstrakSurahDanAyatModal(targetQuranVal);
+    const dispQuranTarget = document.getElementById('displayQuranTarget');
+    if (parsedTarget) {
+        activeModalTargetAyat = parsedTarget.ayat;
+        dispQuranTarget.innerHTML = 'Surah ' + parsedTarget.namaSurah + ' <span class="target-ayat-accent">: Ayat ' + parsedTarget.ayat + '</span>';
+    } else {
+        activeModalTargetAyat = 1;
+        dispQuranTarget.innerHTML = targetQuranVal || "-";
+    }
+
+    // Parsing Realisasi
+    activeModalIsMurajaah = realisasiVal.includes("(Muraja'ah)");
+    const btnMur = document.getElementById('btnMurajaah');
+    if (btnMur) btnMur.classList.toggle('murajaah-active', activeModalIsMurajaah);
+
+    const parsedRealisasi = ekstrakSurahDanAyatModal(realisasiVal);
+    if (parsedRealisasi) {
+        activeModalSurahIndex = parsedRealisasi.indexSurah;
+        activeModalSurahName = parsedRealisasi.namaSurah;
+        activeModalCurrentAyat = parsedRealisasi.ayat;
+    } else if (parsedTarget) {
+        activeModalSurahIndex = parsedTarget.indexSurah;
+        activeModalSurahName = parsedTarget.namaSurah;
+        activeModalCurrentAyat = Math.max(1, parsedTarget.ayat - 1);
+    } else {
+        activeModalSurahIndex = 0;
+        activeModalSurahName = DATA_114_SURAH[0].nama;
+        activeModalCurrentAyat = 1;
+    }
+
+    // Update Tampilan Stepper & Gauge
+    updateQuranGaugeAndDisplay();
+
+    // Grade Al-Qur'an (Admin)
+    let effQStatus = qStatus;
+    if ((!effQStatus || effQStatus === 'belum') && qNilaiAngka) {
+        effQStatus = getGradeFromScore(qNilaiAngka);
+    }
+    if (isAdmin && ['A', 'B', 'C', 'D', 'tidakSetor'].includes(effQStatus) && effQStatus !== 'belum') {
+        if (effQStatus === 'tidakSetor') {
             window.pilihTidakSetor('quran');
         } else {
-            window.pilihGradeQuran(qStatus);
+            window.pilihGradeQuran(effQStatus);
             if (qNilaiAngka) window.updateNilaiManual(qNilaiAngka);
         }
     } else if (isAdmin) {
-        document.querySelectorAll('.grade-pill-btn:not(.hadits-pill-btn):not(.doa-pill-btn)').forEach(btn => btn.classList.remove('active'));
-        document.getElementById('customDropdownContainer').style.display = 'none';
+        window.populateGradeDropdown('quran', 'A');
+        document.querySelectorAll('.grade-pill-quran').forEach(btn => btn.classList.remove('active'));
+        const custBtnText = document.getElementById('customDropdownText');
+        if (custBtnText) custBtnText.innerText = '--';
     }
 
-    if (isAdmin && ['A', 'B', 'C', 'D', 'tidakSetor'].includes(hStatus) && hStatus !== 'belum') {
-        if (hStatus === 'tidakSetor') {
+    // ==========================================
+    // 2. DATA HADITS
+    // ==========================================
+    const madingHadits = (dataMadingDinamis['target-hadits']?.fields?.listHadits || []).map(h => h.judul).filter(Boolean).join(" & ").trim();
+    const targetHaditsVal = murid.haditsTarget || madingHadits || "";
+    document.getElementById('editHaditsTarget').value = targetHaditsVal;
+    const dispHaditsTarget = document.getElementById('displayHaditsTarget');
+    if (dispHaditsTarget) dispHaditsTarget.innerText = targetHaditsVal || "-";
+
+    const realisasiHaditsVal = murid.haditsRealisasi || "";
+    document.getElementById('editHaditsRealisasi').value = realisasiHaditsVal;
+    const txtWaliHadits = document.getElementById('txtWaliHaditsSetor');
+    if (txtWaliHadits) txtWaliHadits.innerText = realisasiHaditsVal || "-";
+    document.getElementById('editStatusHadits').value = hStatus;
+
+    let effHStatus = hStatus;
+    if ((!effHStatus || effHStatus === 'belum') && hNilaiAngka) {
+        effHStatus = getGradeFromScore(hNilaiAngka);
+    }
+    if (isAdmin && ['A', 'B', 'C', 'D', 'tidakSetor'].includes(effHStatus) && effHStatus !== 'belum') {
+        if (effHStatus === 'tidakSetor') {
             window.pilihTidakSetor('hadits');
         } else {
-            window.pilihGradeHadits(hStatus);
+            window.pilihGradeHadits(effHStatus);
             if (hNilaiAngka) window.updateHaditsNilai(hNilaiAngka);
         }
     } else if (isAdmin) {
+        window.populateGradeDropdown('hadits', 'A');
         document.querySelectorAll('.hadits-pill-btn').forEach(btn => btn.classList.remove('active'));
-        document.getElementById('haditsDropdownContainer').style.display = 'none';
+        const hBtnText = document.getElementById('haditsDropdownText');
+        if (hBtnText) hBtnText.innerText = '--';
     }
 
-    if (isAdmin && ['A', 'B', 'C', 'D', 'tidakSetor'].includes(dStatus) && dStatus !== 'belum') {
-        if (dStatus === 'tidakSetor') {
+    // ==========================================
+    // 3. DATA DOA
+    // ==========================================
+    const madingDoa = (dataMadingDinamis['target-hadits']?.fields?.listDoa || []).map(d => d.judul).filter(Boolean).join(" & ").trim();
+    const targetDoaVal = murid.doaTarget || madingDoa || "";
+    document.getElementById('editDoaTarget').value = targetDoaVal;
+    const dispDoaTarget = document.getElementById('displayDoaTarget');
+    if (dispDoaTarget) dispDoaTarget.innerText = targetDoaVal || "-";
+
+    const realisasiDoaVal = murid.doaRealisasi || "";
+    document.getElementById('editDoaRealisasi').value = realisasiDoaVal;
+    const txtWaliDoa = document.getElementById('txtWaliDoaSetor');
+    if (txtWaliDoa) txtWaliDoa.innerText = realisasiDoaVal || "-";
+    document.getElementById('editStatusDoa').value = dStatus;
+
+    let effDStatus = dStatus;
+    if ((!effDStatus || effDStatus === 'belum') && dNilaiAngka) {
+        effDStatus = getGradeFromScore(dNilaiAngka);
+    }
+    if (isAdmin && ['A', 'B', 'C', 'D', 'tidakSetor'].includes(effDStatus) && effDStatus !== 'belum') {
+        if (effDStatus === 'tidakSetor') {
             window.pilihTidakSetor('doa');
         } else {
-            window.pilihGradeDoa(dStatus);
+            window.pilihGradeDoa(effDStatus);
             if (dNilaiAngka) window.updateDoaNilai(dNilaiAngka);
         }
     } else if (isAdmin) {
+        window.populateGradeDropdown('doa', 'A');
         document.querySelectorAll('.doa-pill-btn').forEach(btn => btn.classList.remove('active'));
-        document.getElementById('doaDropdownContainer').style.display = 'none';
+        const dBtnText = document.getElementById('doaDropdownText');
+        if (dBtnText) dBtnText.innerText = '--';
     }
 
-    // Badge: admin pakai nilai hari ini (bisa kosong), publik pakai nilai permanen
-    setBadge('badgeQuran', isAdmin ? qStatus : qStatusPublik, isAdmin ? qNilaiAngka : qNilaiAngkaPublik);
-    const madingHadits = (dataMadingDinamis['target-hadits']?.fields?.listHadits || []).map(h => h.judul).filter(Boolean).join(" & ").trim();
-    const madingDoa = (dataMadingDinamis['target-hadits']?.fields?.listDoa || []).map(d => d.judul).filter(Boolean).join(" & ").trim();
-    document.getElementById('editHaditsTarget').value = murid.haditsTarget || madingHadits || "";
-    document.getElementById('editHaditsRealisasi').value = murid.haditsRealisasi || "-";
-    document.getElementById('editStatusHadits').value = hStatus;
-    setBadge('badgeHadits', isAdmin ? hStatus : hStatusPublik, isAdmin ? hNilaiAngka : hNilaiAngkaPublik);
-    document.getElementById('editDoaTarget').value = murid.doaTarget || madingDoa || "";
-    document.getElementById('editDoaRealisasi').value = murid.doaRealisasi || "-";
-    document.getElementById('editStatusDoa').value = dStatus;
-    setBadge('badgeDoa', isAdmin ? dStatus : dStatusPublik, isAdmin ? dNilaiAngka : dNilaiAngkaPublik);
-    document.getElementById('progressModal').classList.add('open');
+    // ==========================================
+    // 4. STEMPEL PREDIKAT KELANCARAN WALI SANTRI
+    // ==========================================
+    const predikatSDIT = {
+        A: { text: "Sangat Lancar (Mumtaz)", color: "#34d399" },
+        B: { text: "Lancar (Jayyid Jiddan)", color: "#6ee7b7" },
+        C: { text: "Cukup Lancar (Jayyid)", color: "#fcd34d" },
+        D: { text: "Perlu Bimbingan (Muraja'ah)", color: "#f87171" }
+    };
 
-    const inputs = document.querySelectorAll('#progressModal textarea.admin-input');
-    const selects = document.querySelectorAll('#progressModal .admin-select-status');
-    const badges = document.querySelectorAll('#progressModal .status-badge, #progressModal .dot');
+    function setWaliPredikat(status, elmId) {
+        const el = document.getElementById(elmId);
+        if (!el) return;
+        if (status === 'tidakSetor') {
+            el.innerText = "Belum Setor";
+            el.style.color = "#f87171";
+        } else if (predikatSDIT[status]) {
+            el.innerText = predikatSDIT[status].text;
+            el.style.color = predikatSDIT[status].color;
+        } else {
+            el.innerText = "Belum Dinilai";
+            el.style.color = "#94a3b8";
+        }
+    }
+
+    setWaliPredikat(qStatusPublik, 'lblPredikatNama');
+    setWaliPredikat(hStatusPublik, 'lblPredikatHaditsNama');
+    setWaliPredikat(dStatusPublik, 'lblPredikatDoaNama');
+
+    // ==========================================
+    // 5. TATA LETAK MODE GURU VS WALI SANTRI
+    // ==========================================
+    const adminRows = [
+        document.getElementById('quranAdminGradesRow'),
+        document.getElementById('haditsAdminGradesRow'),
+        document.getElementById('doaAdminGradesRow'),
+        document.getElementById('adminSetoranHarianContainer')
+    ];
+    const noteEl = document.getElementById('spreadsheetNote');
+    const saveBtn = document.getElementById('btnSaveMurid');
+    const doaBtn = document.getElementById('btnDoaWali');
+    const actionGuru = document.getElementById('actionAreaGuru');
+    const actionWali = document.getElementById('actionAreaWali');
 
     if (isAdmin) {
-        inputs.forEach(i => { i.disabled = false; i.style.height = "auto"; });
-        selects.forEach(s => { s.style.display = (s.id === 'quranGradeContainer' || s.id === 'haditsChips' || s.id === 'doaChips') ? 'flex' : 'block'; });
-        badges.forEach(b => b.style.display = 'none');
-        document.getElementById('btnSaveMurid').style.display = 'block';
-        document.getElementById('quranChips').style.display = 'flex';
-        document.getElementById('adminSetoranHarianContainer').style.display = 'flex';
+        adminRows.forEach(r => { if (r) r.style.display = 'flex'; });
+        if (noteEl) noteEl.style.display = 'block';
+        if (actionGuru) actionGuru.style.display = 'block';
+        if (saveBtn) saveBtn.style.display = 'flex';
+        if (actionWali) actionWali.style.display = 'none';
+        if (doaBtn) doaBtn.style.display = 'none';
+
+        document.getElementById('quranGuruInputArea').style.display = 'block';
+        document.getElementById('quranWaliSlateArea').style.display = 'none';
+
+        document.getElementById('haditsGuruInputArea').style.display = 'block';
+        document.getElementById('haditsWaliSlateArea').style.display = 'none';
+
+        document.getElementById('doaGuruInputArea').style.display = 'block';
+        document.getElementById('doaWaliSlateArea').style.display = 'none';
     } else {
-        inputs.forEach(i => { i.disabled = true; i.style.height = 'auto'; setTimeout(() => { i.style.height = (i.scrollHeight + 2) + 'px'; }, 50); });
-        selects.forEach(s => s.style.display = 'none');
-        badges.forEach(b => b.style.display = 'block');
-        document.getElementById('btnSaveMurid').style.display = 'none';
-        document.getElementById('quranChips').style.display = 'none';
-        document.getElementById('adminSetoranHarianContainer').style.display = 'none';
+        adminRows.forEach(r => { if (r) r.style.display = 'none'; });
+        if (noteEl) noteEl.style.display = 'none';
+        if (actionGuru) actionGuru.style.display = 'none';
+        if (saveBtn) saveBtn.style.display = 'none';
+        if (actionWali) actionWali.style.display = 'block';
+        if (doaBtn) doaBtn.style.display = 'flex';
+
+        document.getElementById('quranGuruInputArea').style.display = 'none';
+        document.getElementById('quranWaliSlateArea').style.display = 'block';
+
+        document.getElementById('haditsGuruInputArea').style.display = 'none';
+        document.getElementById('haditsWaliSlateArea').style.display = 'block';
+
+        document.getElementById('doaGuruInputArea').style.display = 'none';
+        document.getElementById('doaWaliSlateArea').style.display = 'block';
     }
+
+    document.getElementById('progressModal').classList.add('open');
 };
 
 window.renderMadingHtml = (id, fields) => {
@@ -1955,31 +2341,12 @@ window.pilihGradeHadits = (grade) => {
     });
 
     const container = document.getElementById('haditsDropdownContainer');
-    container.style.display = 'block';
+    if (container) container.style.display = 'block';
 
-    let html = '';
-    let arr = [];
-    if (grade === 'A') {
-        for (let i = 100; i >= 93; i--) arr.push(i);
-    } else if (grade === 'B') {
-        for (let i = 92; i >= 84; i--) arr.push(i);
-    } else if (grade === 'C') {
-        for (let i = 83; i >= 75; i--) arr.push(i);
-    } else if (grade === 'D') {
-        for (let i = 74; i >= 60; i--) arr.push(i);
-    }
+    window.populateGradeDropdown('hadits', grade);
 
-    arr.forEach(num => {
-        html += `<div class="custom-dropdown-item" onclick="window.selectHaditsNilai(${num})">${num}</div>`;
-    });
-    // Tambahkan opsi "Tidak Setor Sama Sekali" di paling bawah dropdown D
-    if (grade === 'D') {
-        html += `<div class="custom-dropdown-item tidak-setor-item" onclick="window.pilihTidakSetor('hadits')">❌ Tidak Setor Sama Sekali</div>`;
-    }
-    document.getElementById('haditsDropdownList').innerHTML = html;
-
-    const midIndex = Math.floor(arr.length / 2);
-    window.updateHaditsNilai(arr[midIndex]);
+    const defaultScore = { A: 95, B: 88, C: 78, D: 70 }[grade] || 88;
+    window.updateHaditsNilai(defaultScore);
 };
 
 window.pilihGradeDoa = (grade) => {
@@ -1993,36 +2360,17 @@ window.pilihGradeDoa = (grade) => {
     });
 
     const container = document.getElementById('doaDropdownContainer');
-    container.style.display = 'block';
+    if (container) container.style.display = 'block';
 
-    let html = '';
-    let arr = [];
-    if (grade === 'A') {
-        for (let i = 100; i >= 93; i--) arr.push(i);
-    } else if (grade === 'B') {
-        for (let i = 92; i >= 84; i--) arr.push(i);
-    } else if (grade === 'C') {
-        for (let i = 83; i >= 75; i--) arr.push(i);
-    } else if (grade === 'D') {
-        for (let i = 74; i >= 60; i--) arr.push(i);
-    }
+    window.populateGradeDropdown('doa', grade);
 
-    arr.forEach(num => {
-        html += `<div class="custom-dropdown-item" onclick="window.selectDoaNilai(${num})">${num}</div>`;
-    });
-    // Tambahkan opsi "Tidak Setor Sama Sekali" di paling bawah dropdown D
-    if (grade === 'D') {
-        html += `<div class="custom-dropdown-item tidak-setor-item" onclick="window.pilihTidakSetor('doa')">❌ Tidak Setor Sama Sekali</div>`;
-    }
-    document.getElementById('doaDropdownList').innerHTML = html;
-
-    const midIndex = Math.floor(arr.length / 2);
-    window.updateDoaNilai(arr[midIndex]);
+    const defaultScore = { A: 95, B: 88, C: 78, D: 70 }[grade] || 95;
+    window.updateDoaNilai(defaultScore);
 };
 
 window.pilihGradeQuran = (grade) => {
     document.getElementById('editStatusQuran').value = grade;
-    document.querySelectorAll('.grade-pill-btn:not(.hadits-pill-btn):not(.doa-pill-btn)').forEach(btn => {
+    document.querySelectorAll('.grade-pill-quran, .grade-pill-btn:not(.hadits-pill-btn):not(.doa-pill-btn)').forEach(btn => {
         if (btn.getAttribute('data-grade') === grade) {
             btn.classList.add('active');
         } else {
@@ -2031,32 +2379,12 @@ window.pilihGradeQuran = (grade) => {
     });
 
     const container = document.getElementById('customDropdownContainer');
-    container.style.display = 'block';
+    if (container) container.style.display = 'block';
 
-    let html = '';
-    let arr = [];
-    if (grade === 'A') {
-        for (let i = 100; i >= 93; i--) arr.push(i);
-    } else if (grade === 'B') {
-        for (let i = 92; i >= 84; i--) arr.push(i);
-    } else if (grade === 'C') {
-        for (let i = 83; i >= 75; i--) arr.push(i);
-    } else if (grade === 'D') {
-        for (let i = 74; i >= 60; i--) arr.push(i);
-    }
+    window.populateGradeDropdown('quran', grade);
 
-    arr.forEach(num => {
-        html += `<div class="custom-dropdown-item" onclick="window.selectCustomNilai(${num})">${num}</div>`;
-    });
-    // Tambahkan opsi "Tidak Setor Sama Sekali" di paling bawah dropdown D
-    if (grade === 'D') {
-        html += `<div class="custom-dropdown-item tidak-setor-item" onclick="window.pilihTidakSetor('quran')">❌ Tidak Setor Sama Sekali</div>`;
-    }
-
-    document.getElementById('customDropdownList').innerHTML = html;
-
-    const midIndex = Math.floor(arr.length / 2);
-    window.updateNilaiManual(arr[midIndex]);
+    const defaultScore = { A: 95, B: 88, C: 78, D: 70 }[grade] || 95;
+    window.updateNilaiManual(defaultScore);
 };
 
 // Handler untuk status "Tidak Setor Sama Sekali"
@@ -2065,19 +2393,21 @@ window.pilihTidakSetor = (subject) => {
         document.getElementById('editStatusQuran').value = 'tidakSetor';
         document.getElementById('editQuranNilaiAngka').value = '';
         document.getElementById('customDropdownText').innerText = '❌ Tidak Setor';
-        // Tutup dropdown
-        document.getElementById('customDropdownContainer').classList.remove('open');
-        document.getElementById('customDropdownList').classList.remove('show');
-        // Aktifkan pill D agar terlihat konteksnya
-        document.querySelectorAll('.grade-pill-btn:not(.hadits-pill-btn):not(.doa-pill-btn)').forEach(btn => {
+        const container = document.getElementById('customDropdownContainer');
+        const list = document.getElementById('customDropdownList');
+        if (container) container.classList.remove('open');
+        if (list) list.classList.remove('show');
+        document.querySelectorAll('.grade-pill-quran, .grade-pill-btn:not(.hadits-pill-btn):not(.doa-pill-btn)').forEach(btn => {
             btn.classList.toggle('active', btn.getAttribute('data-grade') === 'D');
         });
     } else if (subject === 'hadits') {
         document.getElementById('editStatusHadits').value = 'tidakSetor';
         document.getElementById('editHaditsNilaiAngka').value = '';
         document.getElementById('haditsDropdownText').innerText = '❌ Tidak Setor';
-        document.getElementById('haditsDropdownContainer').classList.remove('open');
-        document.getElementById('haditsDropdownList').classList.remove('show');
+        const container = document.getElementById('haditsDropdownContainer');
+        const list = document.getElementById('haditsDropdownList');
+        if (container) container.classList.remove('open');
+        if (list) list.classList.remove('show');
         document.querySelectorAll('.hadits-pill-btn').forEach(btn => {
             btn.classList.toggle('active', btn.getAttribute('data-grade') === 'D');
         });
@@ -2085,24 +2415,33 @@ window.pilihTidakSetor = (subject) => {
         document.getElementById('editStatusDoa').value = 'tidakSetor';
         document.getElementById('editDoaNilaiAngka').value = '';
         document.getElementById('doaDropdownText').innerText = '❌ Tidak Setor';
-        document.getElementById('doaDropdownContainer').classList.remove('open');
-        document.getElementById('doaDropdownList').classList.remove('show');
+        const container = document.getElementById('doaDropdownContainer');
+        const list = document.getElementById('doaDropdownList');
+        if (container) container.classList.remove('open');
+        if (list) list.classList.remove('show');
         document.querySelectorAll('.doa-pill-btn').forEach(btn => {
             btn.classList.toggle('active', btn.getAttribute('data-grade') === 'D');
         });
     }
-    // Otomatis set setoranHarian = 'sudah' agar masuk statistik hari ini
     window.pilihSetoranHarian('sudah');
 };
 
 window.updateHaditsNilai = (val) => {
     document.getElementById('editHaditsNilaiAngka').value = val;
-    document.getElementById('haditsDropdownText').innerText = val;
+    const el = document.getElementById('haditsDropdownText');
+    if (el) el.innerText = val;
+    document.getElementById('haditsDropdownList').querySelectorAll('.custom-dropdown-item').forEach(item => {
+        item.classList.toggle('selected', item.innerText == val);
+    });
 };
 
 window.updateDoaNilai = (val) => {
     document.getElementById('editDoaNilaiAngka').value = val;
-    document.getElementById('doaDropdownText').innerText = val;
+    const el = document.getElementById('doaDropdownText');
+    if (el) el.innerText = val;
+    document.getElementById('doaDropdownList').querySelectorAll('.custom-dropdown-item').forEach(item => {
+        item.classList.toggle('selected', item.innerText == val);
+    });
 };
 
 window.updateNilaiManual = (val) => {
@@ -2111,49 +2450,77 @@ window.updateNilaiManual = (val) => {
     if (textSpan) textSpan.innerText = val;
 
     document.getElementById('customDropdownList').querySelectorAll('.custom-dropdown-item').forEach(item => {
-        if (item.innerText == val) {
-            item.classList.add('selected');
-        } else {
-            item.classList.remove('selected');
-        }
+        item.classList.toggle('selected', item.innerText == val);
     });
 };
 
-window.toggleCustomDropdown = () => {
-    const container = document.getElementById('customDropdownContainer');
+window.toggleCustomDropdown = (e) => {
+    if (e && e.stopPropagation) e.stopPropagation();
     const list = document.getElementById('customDropdownList');
-    container.classList.toggle('open');
-    list.classList.toggle('show');
+    if (list && !list.children.length) {
+        const activePill = document.querySelector('.grade-pill-quran.active');
+        const g = activePill ? activePill.getAttribute('data-grade') : 'A';
+        const curScore = document.getElementById('editQuranNilaiAngka')?.value;
+        window.populateGradeDropdown('quran', g);
+        if (curScore) window.updateNilaiManual(curScore);
+    }
+    const container = document.getElementById('customDropdownContainer');
+    if (container) container.classList.toggle('open');
+    if (list) list.classList.toggle('show');
 };
 
 window.selectCustomNilai = (val) => {
     window.updateNilaiManual(val);
     const container = document.getElementById('customDropdownContainer');
     const list = document.getElementById('customDropdownList');
-    container.classList.remove('open');
-    list.classList.remove('show');
+    if (container) container.classList.remove('open');
+    if (list) list.classList.remove('show');
 };
 
-window.toggleHaditsDropdown = () => {
-    const container = document.getElementById('haditsDropdownContainer');
+window.toggleHaditsDropdown = (e) => {
+    if (e && e.stopPropagation) e.stopPropagation();
     const list = document.getElementById('haditsDropdownList');
-    container.classList.toggle('open');
-    list.classList.toggle('show');
+    if (list && !list.children.length) {
+        const activePill = document.querySelector('.hadits-pill-btn.active');
+        const g = activePill ? activePill.getAttribute('data-grade') : 'A';
+        const curScore = document.getElementById('editHaditsNilaiAngka')?.value;
+        window.populateGradeDropdown('hadits', g);
+        if (curScore) window.updateHaditsNilai(curScore);
+    }
+    const container = document.getElementById('haditsDropdownContainer');
+    if (container) container.classList.toggle('open');
+    if (list) list.classList.toggle('show');
 };
 
 window.selectHaditsNilai = (val) => {
     window.updateHaditsNilai(val);
     const container = document.getElementById('haditsDropdownContainer');
     const list = document.getElementById('haditsDropdownList');
-    container.classList.remove('open');
-    list.classList.remove('show');
+    if (container) container.classList.remove('open');
+    if (list) list.classList.remove('show');
 };
 
-window.toggleDoaDropdown = () => {
+window.toggleDoaDropdown = (e) => {
+    if (e && e.stopPropagation) e.stopPropagation();
+    const list = document.getElementById('doaDropdownList');
+    if (list && !list.children.length) {
+        const activePill = document.querySelector('.doa-pill-btn.active');
+        const g = activePill ? activePill.getAttribute('data-grade') : 'A';
+        const curScore = document.getElementById('editDoaNilaiAngka')?.value;
+        window.populateGradeDropdown('doa', g);
+        if (curScore) window.updateDoaNilai(curScore);
+    }
+    const container = document.getElementById('doaDropdownContainer');
+    if (container) container.classList.toggle('open');
+    if (list) list.classList.toggle('show');
+};
+
+window.selectDoaNilai = (val) => {
+    window.updateDoaNilai(val);
     const container = document.getElementById('doaDropdownContainer');
     const list = document.getElementById('doaDropdownList');
-    container.classList.toggle('open');
-    list.classList.toggle('show');
+    if (container) container.classList.remove('open');
+    if (list) list.classList.remove('show');
 };
 
 window.selectDoaNilai = (val) => {
@@ -2297,106 +2664,188 @@ window.simpanDataMurid = async () => {
 };
 
 /* =========================================
-   STATISTICS DASHBOARD LOGIC
+   STATISTICS DASHBOARD LOGIC (BORDERLESS MAJESTIC)
+   OPTIMIZED FOR 60FPS MOBILE PERFORMANCE
 ========================================= */
 
-window.openStatsModal = () => {
-    document.getElementById('statsModal').classList.add('open');
-    renderStatsChart();
+const StatAudioEngine = {
+    init() {},
+    play(_) {}
 };
 
-// switchStatsTab dipertahankan agar tidak error jika masih ada referensi lama
-window.switchStatsTab = () => renderStatsChart();
+function getStudentInitials(name) {
+    if (!name) return '??';
+    const words = name.trim().split(/\s+/);
+    if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+    return (words[0][0] + words[1][0]).toUpperCase();
+}
 
-window.toggleStatList = (id) => {
-    const list = document.getElementById(id);
-    const hint = document.getElementById('hint-' + id);
-    if (!list) return;
-    const isOpen = list.classList.toggle('open');
-    if (hint) {
-        hint.classList.toggle('expanded', isOpen);
-        const arrow = hint.querySelector('.stat-bar-hint-arrow');
-        if (arrow) arrow.textContent = isOpen ? '▲' : '▼';
-        hint.querySelector('.hint-text').textContent = isOpen ? 'Sembunyikan daftar nama' : 'Ketuk untuk lihat daftar nama';
+window.activeStatSubject = 'quran';
+window._subjectBreakdownData = null;
+window._statsDataCache = null;
+window._lastStatsSignature = null;
+
+window.openStatsModal = () => {
+    const modal = document.getElementById('statsModal');
+    if (!modal) return;
+    StatAudioEngine.init();
+    
+    // Prevent background scrolling while modal is open on mobile
+    document.body.style.overflow = 'hidden';
+    
+    // Construct or update DOM
+    renderStatsChart();
+    
+    // Use requestAnimationFrame for a buttery 60fps GPU entrance
+    requestAnimationFrame(() => {
+        modal.classList.add('open');
+    });
+};
+
+window.closeStatsModal = () => {
+    const modal = document.getElementById('statsModal');
+    if (modal) modal.classList.remove('open');
+    document.body.style.overflow = '';
+};
+
+window.switchStatSubject = (subj) => {
+    window.closeAllTierDrawers();
+    StatAudioEngine.play('tick');
+    window.activeStatSubject = subj;
+
+    ['quran', 'hadits', 'doa'].forEach(s => {
+        const btn = document.getElementById(`btnStatSubj-${s}`);
+        if (btn) {
+            btn.classList.toggle('active', s === subj);
+        }
+    });
+
+    window.renderStatistikSubject();
+};
+
+window.closeAllTierDrawers = () => {
+    ['A', 'B', 'C', 'D', 'X'].forEach(tier => {
+        const drawer = document.getElementById(`tierDrawer${tier}`);
+        const arrow = document.getElementById(`tierArrow${tier}`);
+        const row = document.getElementById(`tierRowContainer${tier}`);
+        if (drawer) drawer.classList.remove('is-open');
+        if (arrow) arrow.classList.remove('is-open');
+        if (row) row.classList.remove(`active-${tier}`);
+    });
+};
+
+window.toggleTierDrawer = (tier) => {
+    const drawer = document.getElementById(`tierDrawer${tier}`);
+    const arrow = document.getElementById(`tierArrow${tier}`);
+    const row = document.getElementById(`tierRowContainer${tier}`);
+    if (!drawer || !row) return;
+
+    const isOpen = drawer.classList.contains('is-open');
+
+    if (!isOpen) {
+        drawer.classList.add('is-open');
+        if (arrow) arrow.classList.add('is-open');
+        row.classList.add(`active-${tier}`);
+    } else {
+        drawer.classList.remove('is-open');
+        if (arrow) arrow.classList.remove('is-open');
+        row.classList.remove(`active-${tier}`);
     }
 };
 
-// Toggle baris nilai A/B/C/D di dalam sub-breakdown
-window.toggleSubGrade = (id) => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    const row = el.previousElementSibling;
-    const isOpen = el.classList.toggle('open');
-    if (row) row.classList.toggle('active', isOpen);
-};
-
-// Ganti tampilan sub-breakdown saat pill mata pelajaran diklik
-window.switchSubBreakdown = (subj, btn) => {
-    btn.closest('.sub-pills').querySelectorAll('.sub-pill').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-
+window.renderStatistikSubject = () => {
     const data = window._subjectBreakdownData;
-    if (!data) return;
+    const stats = window._statsDataCache;
+    if (!data || !stats) return;
 
-    const gradeConfig = [
-        { g: 'A', icon: '👑', color: '#93c5fd', cls: 'a' },
-        { g: 'B', icon: '🌟', color: '#6ee7b7', cls: 'b' },
-        { g: 'C', icon: '⚡', color: '#fcd34d', cls: 'c' },
-        { g: 'D', icon: '⏳', color: '#94a3b8', cls: 'd' },
-    ];
+    const subj = window.activeStatSubject || 'quran';
+    const subjData = data[subj] || { A: [], B: [], C: [], D: [], X: [] };
+    const sudahCount = stats.sudahSetor.names.length;
 
-    const html = gradeConfig.map(gc => {
-        const names = data[subj][gc.g];
-        const chipsHtml = names.length > 0
-            ? names.map(n => `<span class="stat-name-chip">${n}</span>`).join('')
-            : `<span style="opacity:0.35; font-size:10px;">Tidak ada murid di kategori ini.</span>`;
-        const listId = `subgrade-${subj}-${gc.g}`;
-        return `
-            <div class="sub-grade-row" onclick="window.toggleSubGrade('${listId}')">
-                <span class="sub-grade-label" style="color:${gc.color};">${gc.icon} Nilai ${gc.g}</span>
-                <span class="sub-grade-count" style="color:${gc.color};">${names.length} anak</span>
-                <span class="sub-grade-arrow">▼</span>
-            </div>
-            <div class="sub-grade-names stat-color-${gc.cls}" id="${listId}">${chipsHtml}</div>
-        `;
-    }).join('');
+    const subLabels = { quran: "Al-Qur'an", hadits: "Hadits", doa: "Doa" };
+    const labelEl = document.getElementById('spectrumActiveLabel');
+    if (labelEl) {
+        labelEl.textContent = `${subLabels[subj] || subj} (${sudahCount} Anak)`;
+    }
 
-    document.getElementById('subBreakdownContent').innerHTML = html;
+    const cA = subjData.A.length;
+    const cB = subjData.B.length;
+    const cC = subjData.C.length;
+    const cD = subjData.D.length;
+    const cX = subjData.X.length;
+
+    const pA = sudahCount > 0 ? (cA / sudahCount) * 100 : 0;
+    const pB = sudahCount > 0 ? (cB / sudahCount) * 100 : 0;
+    const pC = sudahCount > 0 ? (cC / sudahCount) * 100 : 0;
+    const pD = sudahCount > 0 ? (cD / sudahCount) * 100 : 0;
+    const pX = sudahCount > 0 ? (cX / sudahCount) * 100 : 0;
+
+    const sA = document.getElementById('specBarA');
+    const sB = document.getElementById('specBarB');
+    const sC = document.getElementById('specBarC');
+    const sD = document.getElementById('specBarD');
+    const sX = document.getElementById('specBarX');
+
+    if (sA) sA.style.width = `${pA}%`;
+    if (sB) sB.style.width = `${pB}%`;
+    if (sC) sC.style.width = `${pC}%`;
+    if (sD) sD.style.width = `${pD}%`;
+    if (sX) sX.style.width = `${pX}%`;
+
+    const renderChips = (names, themeCls) => {
+        if (!names || names.length === 0) {
+            return '<span style="font-size:10px; color:rgba(255,255,255,0.3); font-style:italic; padding:4px 0; text-align:center; width:100%; display:block;">✨ Tidak ada ananda di kategori ini.</span>';
+        }
+        return names.map(n => `<span class="stat-chip-btn ${themeCls}">${n}</span>`).join('');
+    };
+
+    const lA = document.getElementById('tierListA');
+    const lB = document.getElementById('tierListB');
+    const lC = document.getElementById('tierListC');
+    const lD = document.getElementById('tierListD');
+    const lX = document.getElementById('tierListX');
+
+    if (lA) lA.innerHTML = renderChips(subjData.A, 'chip-theme-a');
+    if (lB) lB.innerHTML = renderChips(subjData.B, 'chip-theme-b');
+    if (lC) lC.innerHTML = renderChips(subjData.C, 'chip-theme-c');
+    if (lD) lD.innerHTML = renderChips(subjData.D, 'chip-theme-d');
+    if (lX) lX.innerHTML = renderChips(subjData.X, 'chip-theme-x');
 };
 
 function renderStatsChart() {
     const container = document.getElementById('statsChartContainer');
+    if (!container) return;
     const hariIni = window.getTanggalHariIni();
 
     const totalMurid = dataMuridDinamis.length;
     if (totalMurid === 0) {
-        container.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:30px 20px;">Belum ada data murid untuk kelas ini.</div>';
+        container.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:40px 20px;font-size:13px;">Belum ada data murid untuk kelas ini.</div>';
         return;
     }
 
-    // Struktur data kategori
+    // Memoization check: if data has not changed and container is already rendered, skip re-parsing HTML
+    const dataSig = `${window.kelasTarget}_${hariIni}_` + dataMuridDinamis.map(m => `${m.id || ''}:${m.tanggalSetor || ''}:${m.setoranHarian || ''}:${m.quranStatus || ''}:${m.haditsStatus || ''}:${m.doaStatus || ''}`).join(';');
+    if (window._lastStatsSignature === dataSig && container.innerHTML.trim().length > 0) {
+        window.renderStatistikSubject();
+        window.closeAllTierDrawers();
+        return;
+    }
+    window._lastStatsSignature = dataSig;
+
     const stats = {
         sudahSetor:   { names: [], muridList: [] },
         izin:         { names: [] },
         berhalangan:  { names: [] },
         belumHariIni: { names: [] },
-        tidakSetor:   { names: [] },
     };
 
     dataMuridDinamis.forEach(murid => {
-        // Status permanen "Tidak Setor Sama Sekali"
-        const adaTidakSetor = (murid.quranStatus === 'tidakSetor' || murid.haditsStatus === 'tidakSetor' || murid.doaStatus === 'tidakSetor');
-        if (adaTidakSetor) {
-            stats.tidakSetor.names.push(murid.nama);
-            return;
-        }
-
         const sudahDinilaiHariIni = (murid.tanggalSetor === hariIni);
         const setoranHarian = murid.setoranHarian || 'belum';
 
         if (sudahDinilaiHariIni && setoranHarian === 'sudah') {
             stats.sudahSetor.names.push(murid.nama);
-            stats.sudahSetor.muridList.push(murid); // simpan objek lengkap untuk sub-breakdown
+            stats.sudahSetor.muridList.push(murid);
         } else if (sudahDinilaiHariIni && setoranHarian === 'izin') {
             stats.izin.names.push(murid.nama);
         } else if (sudahDinilaiHariIni && setoranHarian === 'berhalangan') {
@@ -2406,160 +2855,318 @@ function renderStatsChart() {
         }
     });
 
-    // Bangun data per-mata-pelajaran untuk sub-breakdown (disimpan global agar switchSubBreakdown bisa akses)
     const buildSubjectData = (muridList) => {
         const subjectMap = {
-            quran:  { Q: 'quranStatus',  A: [], B: [], C: [], D: [] },
-            hadits: { Q: 'haditsStatus', A: [], B: [], C: [], D: [] },
-            doa:    { Q: 'doaStatus',    A: [], B: [], C: [], D: [] },
+            quran:  { Q: 'quranStatus',  A: [], B: [], C: [], D: [], X: [] },
+            hadits: { Q: 'haditsStatus', A: [], B: [], C: [], D: [], X: [] },
+            doa:    { Q: 'doaStatus',    A: [], B: [], C: [], D: [], X: [] },
         };
         muridList.forEach(murid => {
             ['quran', 'hadits', 'doa'].forEach(subj => {
                 const statusRaw = murid[subjectMap[subj].Q] || '';
-                const grade = ['A', 'B', 'C', 'D'].includes(statusRaw) ? statusRaw : 'D';
-                subjectMap[subj][grade].push(murid.nama);
+                if (statusRaw === 'tidakSetor') {
+                    subjectMap[subj].X.push(murid.nama);
+                } else {
+                    const grade = ['A', 'B', 'C', 'D'].includes(statusRaw) ? statusRaw : 'D';
+                    subjectMap[subj][grade].push(murid.nama);
+                }
             });
         });
-        // Kembalikan hanya A/B/C/D per subjek
         return {
-            quran:  { A: subjectMap.quran.A,  B: subjectMap.quran.B,  C: subjectMap.quran.C,  D: subjectMap.quran.D  },
-            hadits: { A: subjectMap.hadits.A, B: subjectMap.hadits.B, C: subjectMap.hadits.C, D: subjectMap.hadits.D },
-            doa:    { A: subjectMap.doa.A,    B: subjectMap.doa.B,    C: subjectMap.doa.C,    D: subjectMap.doa.D    },
+            quran:  subjectMap.quran,
+            hadits: subjectMap.hadits,
+            doa:    subjectMap.doa,
         };
     };
+
     window._subjectBreakdownData = buildSubjectData(stats.sudahSetor.muridList);
+    window._statsDataCache = stats;
 
-    // Summary row
     const sudah = stats.sudahSetor.names.length;
+    const izin = stats.izin.names.length;
+    const berhalangan = stats.berhalangan.names.length;
+    const belum = stats.belumHariIni.names.length;
     const pct = Math.round((sudah / totalMurid) * 100);
-    const emoji = pct === 100 ? '🎉' : pct >= 70 ? '💪' : pct >= 40 ? '📈' : '🕐';
 
-    let html = `
-        <div style="text-align:center; padding: 12px 0 18px; border-bottom: 1px solid rgba(255,255,255,0.07); margin-bottom: 16px;">
-            <div style="font-size: 36px; line-height:1; margin-bottom:6px;">${emoji}</div>
-            <div style="font-size:22px; font-weight:800; color: var(--gold);">${sudah} / ${totalMurid}</div>
-            <div style="font-size:11px; color:var(--text-muted); margin-top:3px; letter-spacing:0.5px;">SUDAH SETOR HARI INI &nbsp;·&nbsp; ${pct}% Ketuntasan</div>
-        </div>
-    `;
+    const circumference = 314.16; // 2 * PI * 50
+    const offset = circumference - (pct / 100) * circumference;
 
-    // Helper: render satu bar kategori utama
-    const renderBar = (key, icon, title, clsColor, names, extraHtml = '') => {
-        const count = names.length;
-        const percentage = Math.round((count / totalMurid) * 100) || 0;
-        const listId = `stat-list-${key}`;
-        const hintId = `hint-${listId}`;
-        const chipsHtml = count > 0
-            ? names.map(n => `<span class="stat-name-chip">${n}</span>`).join('')
-            : `<span style="opacity:0.4; font-size:11px;">Tidak ada murid di kategori ini.</span>`;
+    const kelasTag = (window.kelasTarget ? `KELAS ${window.kelasTarget.toUpperCase()}` : 'SDIT IHSANUL AMAL') + ' · REKAP LIVE';
 
-        return `
-            <div class="stat-bar-container">
-                <div class="stat-bar-header">
-                    <span class="stat-color-${clsColor}" style="display:flex;align-items:center;gap:6px;">
-                        <span style="font-size:14px;">${icon}</span>
-                        ${title}
-                    </span>
-                    <span class="stat-bar-count-badge">${count} anak</span>
-                </div>
-                <div class="stat-bar-track" onclick="window.toggleStatList('${listId}')">
-                    <div class="stat-bar-fill stat-bg-${clsColor}" style="width:0%;" data-width="${percentage}%"></div>
-                </div>
-                <div id="${hintId}" class="stat-bar-hint" onclick="window.toggleStatList('${listId}')">
-                    <span class="stat-bar-hint-arrow">▼</span>
-                    <span class="hint-text">Ketuk untuk lihat daftar nama</span>
-                    <span style="margin-left:auto; opacity:0.4;">${percentage}%</span>
-                </div>
-                <div id="${listId}" class="stat-names-list stat-color-${clsColor}">
-                    ${extraHtml}
-                    ${count > 0 && !extraHtml ? chipsHtml : (extraHtml ? '' : chipsHtml)}
+    // Attendance summary bottom section
+    let bottomAttendanceHtml = '';
+    if (izin === 0 && berhalangan === 0 && belum === 0) {
+        bottomAttendanceHtml = `
+            <div class="stats-bottom-attendance">
+                <div class="stats-banner-perfect">
+                    <span>✨</span>
+                    <span>Seluruh ${totalMurid} ananda hadir & telah menyetorkan hafalan hari ini.</span>
                 </div>
             </div>
         `;
-    };
-
-    // Sub-breakdown per mata pelajaran untuk "Sudah Setor"
-    const buildSubBreakdownHtml = (subj) => {
-        const data = window._subjectBreakdownData[subj];
-        const gradeConfig = [
-            { g: 'A', icon: '👑', color: '#93c5fd', cls: 'a' },
-            { g: 'B', icon: '🌟', color: '#6ee7b7', cls: 'b' },
-            { g: 'C', icon: '⚡', color: '#fcd34d', cls: 'c' },
-            { g: 'D', icon: '⏳', color: '#94a3b8', cls: 'd' },
-        ];
-        return gradeConfig.map(gc => {
-            const names = data[gc.g];
-            const chipsHtml = names.length > 0
-                ? names.map(n => `<span class="stat-name-chip">${n}</span>`).join('')
-                : `<span style="opacity:0.35; font-size:10px;">Tidak ada murid di kategori ini.</span>`;
-            const listId = `subgrade-${subj}-${gc.g}`;
-            return `
-                <div class="sub-grade-row" onclick="window.toggleSubGrade('${listId}')">
-                    <span class="sub-grade-label" style="color:${gc.color};">${gc.icon} Nilai ${gc.g}</span>
-                    <span class="sub-grade-count" style="color:${gc.color};">${names.length} anak</span>
-                    <span class="sub-grade-arrow">▼</span>
+    } else {
+        bottomAttendanceHtml = '<div class="stats-bottom-attendance">';
+        if (izin > 0) {
+            bottomAttendanceHtml += `
+                <div class="stats-absent-row">
+                    <span style="color:#60a5fa; flex-shrink:0; margin-top:2px;">🏥</span>
+                    <div style="flex:1;">
+                        <span style="color:#cbd5e1; font-weight:700;">Izin / Sakit (${izin} anak):</span>
+                        <div class="stats-absent-chips">
+                            ${stats.izin.names.map(n => `
+                                <span class="stat-chip-btn chip-theme-izin">${n}</span>
+                            `).join('')}
+                        </div>
+                    </div>
                 </div>
-                <div class="sub-grade-names stat-color-${gc.cls}" id="${listId}">${chipsHtml}</div>
             `;
-        }).join('');
-    };
+        }
+        if (berhalangan > 0) {
+            bottomAttendanceHtml += `
+                <div class="stats-absent-row">
+                    <span style="color:#fbbf24; flex-shrink:0; margin-top:2px;">🛑</span>
+                    <div style="flex:1;">
+                        <span style="color:#cbd5e1; font-weight:700;">Berhalangan (${berhalangan} anak):</span>
+                        <div class="stats-absent-chips">
+                            ${stats.berhalangan.names.map(n => `
+                                <span class="stat-chip-btn chip-theme-berhalangan">${n}</span>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        if (belum > 0) {
+            bottomAttendanceHtml += `
+                <div class="stats-absent-row">
+                    <span style="color:#f87171; flex-shrink:0; margin-top:2px;">⏳</span>
+                    <div style="flex:1;">
+                        <span style="color:#cbd5e1; font-weight:700;">Belum Setor (${belum} anak):</span>
+                        <div class="stats-absent-chips">
+                            ${stats.belumHariIni.names.map(n => `
+                                <span class="stat-chip-btn chip-theme-belum">${n}</span>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        bottomAttendanceHtml += '</div>';
+    }
 
-    const subBreakdown = sudah === 0 ? '' : `
-        <div class="sub-breakdown-container">
-            <div class="sub-pills">
-                <button class="sub-pill active" onclick="window.switchSubBreakdown('quran', this)">📖 Qur'an</button>
-                <button class="sub-pill" onclick="window.switchSubBreakdown('hadits', this)">📜 Hadits</button>
-                <button class="sub-pill" onclick="window.switchSubBreakdown('doa', this)">🤲 Doa</button>
+    container.innerHTML = `
+        <!-- HEADER MODAL STATISTIK -->
+        <div class="stats-header-wrap">
+            <div class="stats-live-tag">
+                <span class="stats-live-dot"></span>
+                <span>${kelasTag}</span>
             </div>
-            <div id="subBreakdownContent">
-                ${buildSubBreakdownHtml('quran')}
+            <h2 class="stats-header-title">
+                Statistik Hari Ini
+            </h2>
+            <p class="stats-header-sub">
+                Rekapitulasi Kualitas Mutaba'ah & Kelancaran Ananda
+            </p>
+        </div>
+
+        <!-- HERO SEAMLESS: RING GAUGE DENGAN NAFAS LEGA -->
+        <div class="stats-hero-row">
+            <!-- Circular Completion Ring -->
+            <div class="stats-ring-box">
+                <svg class="stats-ring-svg" viewBox="0 0 120 120">
+                    <circle cx="60" cy="60" r="50" stroke="rgba(255,255,255,0.06)" stroke-width="5" fill="transparent" />
+                    <circle id="heroRingCircle" cx="60" cy="60" r="50" stroke="url(#cleanRingGrad)" stroke-width="5" stroke-linecap="round" fill="transparent" stroke-dasharray="314.16" stroke-dashoffset="${offset}" style="transition: stroke-dashoffset 0.6s cubic-bezier(0.16, 1, 0.3, 1);" />
+                    <defs>
+                        <linearGradient id="cleanRingGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#34d399" />
+                            <stop offset="60%" stop-color="#fef08a" />
+                            <stop offset="100%" stop-color="#d4af37" />
+                        </linearGradient>
+                    </defs>
+                </svg>
+                <div class="stats-ring-center">
+                    <span class="stats-ring-pct">${pct}%</span>
+                    <span class="stats-ring-sub">${pct === 100 ? 'TUNTAS' : 'SEBAGIAN'}</span>
+                </div>
+            </div>
+
+            <!-- Attendance Stats Grid -->
+            <div class="stats-counter-grid">
+                <div class="stats-counter-item">
+                    <div class="stats-counter-icon stats-icon-sudah">✅</div>
+                    <div class="stats-counter-info">
+                        <span class="stats-counter-title">Sudah Setor</span>
+                        <span class="stats-counter-num stats-num-highlight">${sudah} <span class="stats-counter-unit">anak</span></span>
+                    </div>
+                </div>
+                <div class="stats-counter-item">
+                    <div class="stats-counter-icon stats-icon-neutral">🏥</div>
+                    <div class="stats-counter-info">
+                        <span class="stats-counter-title">Izin / Sakit</span>
+                        <span class="stats-counter-num stats-num-dim">${izin} <span class="stats-counter-unit">anak</span></span>
+                    </div>
+                </div>
+                <div class="stats-counter-item">
+                    <div class="stats-counter-icon stats-icon-neutral">🛑</div>
+                    <div class="stats-counter-info">
+                        <span class="stats-counter-title">Berhalangan</span>
+                        <span class="stats-counter-num stats-num-dim">${berhalangan} <span class="stats-counter-unit">anak</span></span>
+                    </div>
+                </div>
+                <div class="stats-counter-item">
+                    <div class="stats-counter-icon stats-icon-neutral">⏳</div>
+                    <div class="stats-counter-info">
+                        <span class="stats-counter-title">Belum Setor</span>
+                        <span class="stats-counter-num stats-num-dim">${belum} <span class="stats-counter-unit">anak</span></span>
+                    </div>
+                </div>
             </div>
         </div>
-    `;
 
-    // Untuk bar "Sudah Setor": tidak tampilkan chip nama (sudah ada di sub-breakdown)
-    const renderBarSudah = () => {
-        const count = sudah;
-        const percentage = Math.round((count / totalMurid) * 100) || 0;
-        const listId = 'stat-list-sudah';
-        const hintId = 'hint-stat-list-sudah';
-        return `
-            <div class="stat-bar-container">
-                <div class="stat-bar-header">
-                    <span class="stat-color-a" style="display:flex;align-items:center;gap:6px;">
-                        <span style="font-size:14px;">✅</span>
-                        Sudah Setor
-                    </span>
-                    <span class="stat-bar-count-badge">${count} anak</span>
+        <!-- SUBJECT SWITCHER DECK -->
+        <div class="stats-subj-deck">
+            <button type="button" onclick="window.switchStatSubject('quran')" id="btnStatSubj-quran" class="stats-subj-btn ${window.activeStatSubject === 'quran' ? 'active' : ''}">
+                <span>📖</span> Al-Qur'an
+            </button>
+            <button type="button" onclick="window.switchStatSubject('hadits')" id="btnStatSubj-hadits" class="stats-subj-btn ${window.activeStatSubject === 'hadits' ? 'active' : ''}">
+                <span>📜</span> Hadits
+            </button>
+            <button type="button" onclick="window.switchStatSubject('doa')" id="btnStatSubj-doa" class="stats-subj-btn ${window.activeStatSubject === 'doa' ? 'active' : ''}">
+                <span>🤲</span> Doa
+            </button>
+        </div>
+
+        <!-- LUMINOUS SPECTRUM BAR -->
+        <div class="stats-spectrum-wrap">
+            <div class="stats-spectrum-header">
+                <span class="stats-spectrum-title">
+                    <span>📊</span> Sebaran Kelancaran
+                </span>
+                <span id="spectrumActiveLabel" class="stats-spectrum-tag">Memuat...</span>
+            </div>
+
+            <!-- Slim Spectrum Track -->
+            <div class="stats-spectrum-track">
+                <div id="specBarA" style="width: 0%;" class="stats-spectrum-seg stats-seg-a" title="Mumtaz"></div>
+                <div id="specBarB" style="width: 0%;" class="stats-spectrum-seg stats-seg-b" title="Jayyid Jiddan"></div>
+                <div id="specBarC" style="width: 0%;" class="stats-spectrum-seg stats-seg-c" title="Jayyid"></div>
+                <div id="specBarD" style="width: 0%;" class="stats-spectrum-seg stats-seg-d" title="Muraja'ah"></div>
+                <div id="specBarX" style="width: 0%;" class="stats-spectrum-seg stats-seg-x" title="Tidak Setor"></div>
+            </div>
+
+            <!-- Legend Minimalis -->
+            <div class="stats-spectrum-legend">
+                <span class="stats-legend-item stats-legend-mumtaz"><span class="stats-legend-dot"></span> Mumtaz</span>
+                <span class="stats-legend-item stats-legend-jiddan"><span class="stats-legend-dot"></span> J. Jiddan</span>
+                <span class="stats-legend-item stats-legend-jayyid"><span class="stats-legend-dot"></span> Jayyid</span>
+                <span class="stats-legend-item stats-legend-murajaah"><span class="stats-legend-dot"></span> Muraja'ah</span>
+                <span class="stats-legend-item stats-legend-tdk"><span class="stats-legend-dot"></span> Tdk Setor</span>
+            </div>
+        </div>
+
+        <!-- DAFTAR KLASIFIKASI KELANCARAN (CENTERED & DEFAULT TERTUTUP) -->
+        <div class="stats-tiers-container" id="tierCardsContainer">
+            <!-- ROW 1: MUMTAZ (SAPPHIRE BLUE) -->
+            <div id="tierRowContainerA" class="tier-row-container">
+                <div onclick="window.toggleTierDrawer('A')" class="tier-click-target">
+                    <div class="tier-title-line tier-title-A">
+                        <span class="tier-icon-sparkle">🌟</span>
+                        <span>Mumtaz</span>
+                        <span class="tier-qualifier">(Sangat Lancar)</span>
+                        <span id="tierArrowA" class="tier-arrow-indicator">▼</span>
+                    </div>
+                    <div class="tier-desc-line tier-desc-A">
+                        Fasih, Tajwid & Makhraj Sempurna
+                    </div>
                 </div>
-                <div class="stat-bar-track" onclick="window.toggleStatList('${listId}')">
-                    <div class="stat-bar-fill stat-bg-a" style="width:0%;" data-width="${percentage}%"></div>
-                </div>
-                <div id="${hintId}" class="stat-bar-hint" onclick="window.toggleStatList('${listId}')">
-                    <span class="stat-bar-hint-arrow">▼</span>
-                    <span class="hint-text">Ketuk untuk lihat rincian nilai</span>
-                    <span style="margin-left:auto; opacity:0.4;">${percentage}%</span>
-                </div>
-                <div id="${listId}" class="stat-names-list stat-color-a">
-                    ${subBreakdown}
+                <div id="tierDrawerA" class="tier-drawer-wrapper">
+                    <div id="tierListA" class="tier-chips-deck border-top-A"></div>
                 </div>
             </div>
-        `;
-    };
 
-    html += renderBarSudah();
-    html += renderBar('izin', '🏥', 'Izin / Sakit', 'izin', stats.izin.names);
-    html += renderBar('berhalangan', '🛑', 'Berhalangan / Uzur', 'berhalangan', stats.berhalangan.names);
-    html += renderBar('belum', '⏳', 'Belum Setor Hari Ini', 'd', stats.belumHariIni.names);
-    html += renderBar('tidaksetor', '🚫', 'Tidak Setor Sama Sekali', 'e', stats.tidakSetor.names);
+            <!-- ROW 2: JAYYID JIDDAN (EMERALD GREEN) -->
+            <div id="tierRowContainerB" class="tier-row-container">
+                <div onclick="window.toggleTierDrawer('B')" class="tier-click-target">
+                    <div class="tier-title-line tier-title-B">
+                        <span class="tier-icon-sparkle">✨</span>
+                        <span>Jayyid Jiddan</span>
+                        <span class="tier-qualifier">(Lancar)</span>
+                        <span id="tierArrowB" class="tier-arrow-indicator">▼</span>
+                    </div>
+                    <div class="tier-desc-line tier-desc-B">
+                        Lancar & Terbimbing Mandiri
+                    </div>
+                </div>
+                <div id="tierDrawerB" class="tier-drawer-wrapper">
+                    <div id="tierListB" class="tier-chips-deck border-top-B"></div>
+                </div>
+            </div>
 
-    container.innerHTML = html;
+            <!-- ROW 3: JAYYID (AMBER GOLD) -->
+            <div id="tierRowContainerC" class="tier-row-container">
+                <div onclick="window.toggleTierDrawer('C')" class="tier-click-target">
+                    <div class="tier-title-line tier-title-C">
+                        <span class="tier-icon-sparkle">📖</span>
+                        <span>Jayyid</span>
+                        <span class="tier-qualifier">(Cukup Lancar)</span>
+                        <span id="tierArrowC" class="tier-arrow-indicator">▼</span>
+                    </div>
+                    <div class="tier-desc-line tier-desc-C">
+                        Cukup Lancar, Terus Dimantapkan
+                    </div>
+                </div>
+                <div id="tierDrawerC" class="tier-drawer-wrapper">
+                    <div id="tierListC" class="tier-chips-deck border-top-C"></div>
+                </div>
+            </div>
 
-    // Staggered bar animation
-    setTimeout(() => {
-        container.querySelectorAll('.stat-bar-fill').forEach(bar => {
-            bar.style.width = bar.getAttribute('data-width');
-        });
-    }, 80);
+            <!-- ROW 4: MURAJA'AH (CORAL ROSE) -->
+            <div id="tierRowContainerD" class="tier-row-container">
+                <div onclick="window.toggleTierDrawer('D')" class="tier-click-target">
+                    <div class="tier-title-line tier-title-D">
+                        <span class="tier-icon-sparkle">🔄</span>
+                        <span>Muraja'ah</span>
+                        <span class="tier-qualifier">(Perlu Bimbingan)</span>
+                        <span id="tierArrowD" class="tier-arrow-indicator">▼</span>
+                    </div>
+                    <div class="tier-desc-line tier-desc-D">
+                        Perlu Pengulangan Rutin Bersama Guru
+                    </div>
+                </div>
+                <div id="tierDrawerD" class="tier-drawer-wrapper">
+                    <div id="tierListD" class="tier-chips-deck border-top-D"></div>
+                </div>
+            </div>
+
+            <!-- ROW 5: TIDAK SETOR SAMA SEKALI (CRIMSON RED) -->
+            <div id="tierRowContainerX" class="tier-row-container">
+                <div onclick="window.toggleTierDrawer('X')" class="tier-click-target">
+                    <div class="tier-title-line tier-title-X">
+                        <span class="tier-icon-sparkle">🚫</span>
+                        <span>Tidak Setor Sama Sekali</span>
+                        <span id="tierArrowX" class="tier-arrow-indicator">▼</span>
+                    </div>
+                    <div class="tier-desc-line tier-desc-X">
+                        Hadir Hari Ini · Belum Menyetorkan Subjek Ini
+                    </div>
+                </div>
+                <div id="tierDrawerX" class="tier-drawer-wrapper">
+                    <div id="tierListX" class="tier-chips-deck border-top-X"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- STATUS KEHADIRAN & CATATAN AKHIR -->
+        ${bottomAttendanceHtml}
+    `;
+
+    // Populate active subject and ensure all drawers start closed by default
+    window.renderStatistikSubject();
+    window.closeAllTierDrawers();
 }
 
-
+// Backward compatibility stubs
+window.switchStatsTab = () => renderStatsChart();
+window.toggleStatList = (id) => {};
+window.toggleSubGrade = (id) => {};
+window.switchSubBreakdown = (subj, btn) => window.switchStatSubject(subj);

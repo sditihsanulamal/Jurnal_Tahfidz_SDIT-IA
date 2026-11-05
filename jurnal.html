@@ -14,7 +14,7 @@
         rel="stylesheet">
 
     <!-- Panggil File CSS Eksternal (Cache Busting) -->
-    <link rel="stylesheet" href="style.css?v=27">
+    <link rel="stylesheet" href="style.css?v=46">
 </head>
 
 <body>
@@ -176,7 +176,7 @@
         </button>
     </nav>
 
-    <!-- MODAL 1: Profil Ananda -->
+    <!-- MODAL 1: Profil Ananda (Majestic Mutaba'ah SDIT Ihsanul Amal) -->
     <div id="progressModal" class="modal" onclick="closeModalOnBackdrop(event, 'progressModal')">
         <div class="modal-content">
             <div class="close-btn" onclick="closeModal('progressModal')">
@@ -185,171 +185,291 @@
                     <line x1="6" y1="6" x2="18" y2="18"></line>
                 </svg>
             </div>
+            
+            <!-- HEADER MODAL -->
             <div class="modal-header">
                 <div class="modal-avatar" id="modalInitials">AF</div>
-                <h2 id="modalNama">Nama Ananda</h2>
+                <h2 id="modalNama" class="nama-ananda-gold" style="font-size:22px; margin-bottom:8px;">Nama Ananda</h2>
                 <div id="badgeSetoranHarian" class="badge-harian">⏳ Belum Setor</div>
+                
+                <!-- Tanda Telah Didoakan Orang Tua -->
+                <div id="tandaDidoakanRow" style="display:none; margin-top: 6px; margin-bottom: 6px;">
+                    <span style="display:inline-flex; align-items:center; gap:6px; padding:4px 12px; border-radius:9999px; background:rgba(212,175,55,0.2); border:1px solid rgba(212,175,55,0.5); color:#fef08a; font-size:11px; font-weight:700;">
+                        <span>🤲</span> Telah Didoakan Orang Tua Hari Ini
+                    </span>
+                </div>
+
+                <!-- Admin Status Setoran Buttons -->
                 <div id="adminSetoranHarianContainer" class="admin-setoran-container">
-                    <button type="button" class="setoran-btn" data-val="sudah" onclick="pilihSetoranHarian('sudah')">✅
-                        Sudah Setor</button>
-                    <button type="button" class="setoran-btn" data-val="berhalangan"
-                        onclick="pilihSetoranHarian('berhalangan')">🛑 Berhalangan</button>
-                    <button type="button" class="setoran-btn" data-val="izin" onclick="pilihSetoranHarian('izin')">🏥
-                        Izin/Sakit</button>
-                    <button type="button" class="setoran-btn" data-val="belum" onclick="pilihSetoranHarian('belum')">❌
-                        Belum Setor</button>
+                    <button type="button" class="setoran-btn" data-val="sudah" onclick="pilihSetoranHarian('sudah')">✅ Sudah Setor</button>
+                    <button type="button" class="setoran-btn" data-val="berhalangan" onclick="pilihSetoranHarian('berhalangan')">🛑 Berhalangan</button>
+                    <button type="button" class="setoran-btn" data-val="izin" onclick="pilihSetoranHarian('izin')">🏥 Izin/Sakit</button>
+                    <button type="button" class="setoran-btn" data-val="belum" onclick="pilihSetoranHarian('belum')">❌ Belum Setor</button>
                 </div>
                 <input type="hidden" id="valSetoranHarian" value="belum">
             </div>
 
             <input type="hidden" id="editId">
 
-            <!-- Dashboard Card: Al-Qur'an -->
-            <div class="detail-card">
-                <div class="card-header-flex">
-                    <div class="detail-header">
-                        <div class="detail-icon">📖</div>
-                        <span class="detail-label">Al-Qur'an</span>
-                        <div id="badgeQuran" class="status-badge"></div>
-                    </div>
-                    <div id="quranGradeContainer" class="quran-grade-wrapper admin-select-status">
-                        <input type="hidden" id="editStatusQuran" value="belum">
-
-                        <!-- Segmented Pill -->
-                        <div class="grade-pill-group">
-                            <button type="button" class="grade-pill-btn" data-grade="A"
-                                onclick="window.pilihGradeQuran('A')">A</button>
-                            <button type="button" class="grade-pill-btn" data-grade="B"
-                                onclick="window.pilihGradeQuran('B')">B</button>
-                            <button type="button" class="grade-pill-btn" data-grade="C"
-                                onclick="window.pilihGradeQuran('C')">C</button>
-                            <button type="button" class="grade-pill-btn" data-grade="D"
-                                onclick="window.pilihGradeQuran('D')">D</button>
-                        </div>
-
-                        <!-- Dropdown Angka Custom -->
-                        <div id="customDropdownContainer" class="custom-dropdown-container">
-                            <button type="button" id="customDropdownBtn" class="custom-dropdown-btn"
-                                onclick="window.toggleCustomDropdown()">
-                                <span id="customDropdownText">--</span>
-                                <span class="chevron">▼</span>
-                            </button>
-                            <div id="customDropdownList" class="custom-dropdown-list">
-                                <!-- Options dynamically generated -->
-                            </div>
-                            <input type="hidden" id="editQuranNilaiAngka" value="">
-                        </div>
-                    </div>
-                </div>
-                <div class="target-realisasi-grid">
-                    <div class="tr-box">
-                        <div class="tr-label">Target Hafalan</div>
-                        <textarea id="editQuranTarget" class="admin-input" rows="2" disabled></textarea>
-                    </div>
-                    <div class="tr-box">
-                        <div class="tr-label">Yang Disetorkan</div>
-                        <textarea id="editQuranRealisasi" class="admin-input" rows="2" disabled></textarea>
-                        <div class="action-chips" id="quranChips">
-                            <button type="button" class="chip-btn" onclick="tambahAyatPintar(1)">+1 Ayat</button>
-                            <button type="button" class="chip-btn" onclick="tambahAyatPintar(3)">+3 Ayat</button>
-                            <button type="button" class="chip-btn" onclick="tambahAyatPintar(5)">+5 Ayat</button>
-                            <button type="button" class="chip-btn" onclick="tambahAyatPintar('ulangi')">🔄
-                                Muraja'ah</button>
-                        </div>
-                    </div>
-                </div>
+            <!-- FLUID SUBJECT SWITCHER DECK -->
+            <div class="subject-tabs-deck">
+                <button type="button" onclick="window.switchSubject('quran', this)" id="tabBtn-quran" class="subject-tab-btn active">
+                    <span>📖</span> Al-Qur'an
+                </button>
+                <button type="button" onclick="window.switchSubject('hadits', this)" id="tabBtn-hadits" class="subject-tab-btn">
+                    <span>📜</span> Hadits
+                </button>
+                <button type="button" onclick="window.switchSubject('doa', this)" id="tabBtn-doa" class="subject-tab-btn">
+                    <span>🤲</span> Doa
+                </button>
             </div>
 
-            <!-- Dashboard Card: Hadits -->
-            <div class="detail-card">
-                <div class="card-header-flex">
-                    <div class="detail-header">
-                        <div class="detail-icon">📜</div>
-                        <span class="detail-label">Hadits</span>
-                        <div id="badgeHadits" class="status-badge"></div>
+            <!-- ============================================== -->
+            <!-- SUBJEK 1: AL-QUR'AN                            -->
+            <!-- ============================================== -->
+            <div id="deckQuran" class="subject-deck">
+                <!-- Target Masthead Borderless -->
+                <div class="target-masthead">
+                    <div class="target-micro-label">
+                        <span class="target-dot-pulse"></span>
+                        <span class="target-micro-text">TARGET HAFALAN AL-QUR'AN</span>
                     </div>
-                    <input type="hidden" id="editStatusHadits" value="belum">
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        <div id="haditsChips" class="grade-pill-group admin-select-status" style="display:none;">
-                            <button type="button" class="grade-pill-btn hadits-pill-btn" data-grade="A"
-                                onclick="window.pilihGradeHadits('A')">A</button>
-                            <button type="button" class="grade-pill-btn hadits-pill-btn" data-grade="B"
-                                onclick="window.pilihGradeHadits('B')">B</button>
-                            <button type="button" class="grade-pill-btn hadits-pill-btn" data-grade="C"
-                                onclick="window.pilihGradeHadits('C')">C</button>
-                            <button type="button" class="grade-pill-btn hadits-pill-btn" data-grade="D"
-                                onclick="window.pilihGradeHadits('D')">D</button>
+                    <div id="displayQuranTarget" class="target-fluid-title">
+                        Surah Al-Baqarah <span class="target-ayat-accent">: Ayat 74</span>
+                    </div>
+                    <!-- Luxury Illuminated Progress Gauge -->
+                    <div class="luxury-gauge-bar">
+                        <div id="quranProgressBar" class="luxury-gauge-fill" style="width: 82%;"></div>
+                    </div>
+                    <div class="metrics-row">
+                        <div id="lblProgressPct" class="metrics-pct">82% <span>Tercapai</span></div>
+                        <div id="lblProgressStatus" class="metrics-status">Selisih <strong style="color:#ffffff;">13 Ayat</strong> Menuju Target</div>
+                    </div>
+                    <div class="luminous-hairline"></div>
+                </div>
+
+                <!-- Papan Tulis Setoran Al-Qur'an -->
+                <div class="slate-blackboard-luxury">
+                    <!-- Mode Guru: Stepper & Dial -->
+                    <div id="quranGuruInputArea">
+                        <div style="margin-bottom:6px;">
+                            <span style="font-size:10px; text-transform:uppercase; font-weight:700; letter-spacing:1px; color:#94a3b8;">Ayat terakhir yang disetorkan:</span>
                         </div>
-                        <div id="haditsDropdownContainer" class="custom-dropdown-container" style="display:none;">
-                            <button type="button" id="haditsDropdownBtn" class="custom-dropdown-btn"
-                                onclick="window.toggleHaditsDropdown()">
-                                <span id="haditsDropdownText">--</span>
-                                <span class="chevron">▼</span>
+                        <div style="margin-bottom:12px; display:flex; align-items:baseline; gap:8px;">
+                            <span id="dialSurahLabel" style="font-size:17px; font-weight:800; color:#ffffff; letter-spacing:-0.2px;">Surah Al-Baqarah</span>
+                            <span style="font-size:13.5px; font-weight:700; color:#d4af37;">Ayat</span>
+                            <span id="displayAyatNum" onclick="window.editAyatManual()" title="Klik untuk ubah nomor ayat" style="font-size:22px; font-weight:900; color:#fef08a; letter-spacing:-0.5px; cursor:pointer; text-decoration:underline dotted rgba(212,175,55,0.6);">61</span>
+                        </div>
+                        <div class="quick-chips-grid">
+                            <button type="button" onclick="window.stepAyat(1)" class="btn-tactile quick-chip">+1 Ayat</button>
+                            <button type="button" onclick="window.stepAyat(3)" class="btn-tactile quick-chip">+3 Ayat</button>
+                            <button type="button" onclick="window.stepAyat(5)" class="btn-tactile quick-chip">+5 Ayat</button>
+                            <button type="button" onclick="window.toggleMurajaahModal()" id="btnMurajaah" class="btn-tactile quick-chip">🔄 Muraja'ah</button>
+                        </div>
+                    </div>
+<!-- Mode Wali Santri: Papan Tulis Stempel Predikat -->
+                    <div id="quranWaliSlateArea" style="display:none;">
+                        <span style="font-size:10px; text-transform:uppercase; font-weight:700; letter-spacing:1px; color:#94a3b8; display:block; margin-bottom:4px;">Ayat terakhir yang disetorkan:</span>
+                        <div style="font-size:17px; font-weight:800; color:#ffffff; line-height:1.35;" id="txtWaliQuranSetor">
+                            Surah Al-Baqarah Ayat 61
+                        </div>
+                        <div style="display:flex; justify-content:flex-end; margin-top:14px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.1);">
+                            <div style="text-align:right;">
+                                <span style="font-size:9px; text-transform:uppercase; font-weight:700; letter-spacing:1px; color:#94a3b8; display:block;">Predikat Kelancaran</span>
+                                <div id="sealPredikatTeks" style="font-size:12px; font-weight:800; color:#34d399; display:flex; align-items:center; justify-content:flex-end; gap:6px; margin-top:2px;">
+                                    <span>📜</span>
+                                    <span id="lblPredikatNama">Sangat Lancar (Mumtaz)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Grade & Drop-up Skor Guru -->
+                <div id="quranAdminGradesRow" class="admin-grade-row">
+                    <span class="admin-grade-label">Nilai</span>
+                    <div class="admin-grade-controls">
+                        <div class="grade-pill-group-luxury">
+                            <button type="button" class="grade-pill-btn-luxury grade-pill-quran" data-grade="A" onclick="window.pilihGradeQuran('A')">A</button>
+                            <button type="button" class="grade-pill-btn-luxury grade-pill-quran" data-grade="B" onclick="window.pilihGradeQuran('B')">B</button>
+                            <button type="button" class="grade-pill-btn-luxury grade-pill-quran" data-grade="C" onclick="window.pilihGradeQuran('C')">C</button>
+                            <button type="button" class="grade-pill-btn-luxury grade-pill-quran" data-grade="D" onclick="window.pilihGradeQuran('D')">D</button>
+                        </div>
+                        <div id="customDropdownContainer" class="custom-dropdown-container">
+                            <button type="button" id="customDropdownBtn" class="btn-score-dropup" onclick="window.toggleCustomDropdown(event)">
+                                <span id="customDropdownText">95</span>
+                                <span style="font-size:9px; opacity:0.7;">▲</span>
+                            </button>
+                            <div id="customDropdownList" class="custom-dropdown-list"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hidden Input Form Qur'an (Sinkron Backend & Google Sheets) -->
+                <textarea id="editQuranTarget" style="display:none;"></textarea>
+                <textarea id="editQuranRealisasi" style="display:none;"></textarea>
+                <input type="hidden" id="editStatusQuran" value="belum">
+                <input type="hidden" id="editQuranNilaiAngka" value="">
+                <div id="badgeQuran" style="display:none;"></div>
+            </div>
+
+            <!-- ============================================== -->
+            <!-- SUBJEK 2: HADITS                               -->
+            <!-- ============================================== -->
+            <div id="deckHadits" class="subject-deck" style="display:none;">
+                <!-- Target Masthead Borderless -->
+                <div class="target-masthead">
+                    <div class="target-micro-label">
+                        <span class="target-dot-pulse"></span>
+                        <span class="target-micro-text">TARGET HAFALAN HADITS</span>
+                    </div>
+                    <div id="displayHaditsTarget" class="target-fluid-title">
+                        27. Perumpamaan Orang Mukmin & 28. Lemah Lembut
+                    </div>
+                    <div class="luminous-hairline"></div>
+                </div>
+
+                <!-- Papan Tulis Setoran Hadits -->
+                <div class="slate-blackboard-luxury">
+                    <!-- Mode Guru: Textarea Mewah -->
+                    <div id="haditsGuruInputArea">
+                        <div style="margin-bottom:6px;">
+                            <span style="font-size:10px; text-transform:uppercase; font-weight:700; letter-spacing:1px; color:#94a3b8;">Hadits terakhir yang disetorkan:</span>
+                        </div>
+                        <textarea id="editHaditsRealisasi" class="slate-textarea-luxury" rows="2" oninput="window.syncHaditsManual(this.value)" placeholder="Tuliskan judul hadits yang disetorkan ananda hari ini..."></textarea>
+                    </div>
+
+                    <!-- Mode Wali: Tampilan Papan Tulis & Stempel Predikat -->
+                    <div id="haditsWaliSlateArea" style="display:none;">
+                        <span style="font-size:10px; text-transform:uppercase; font-weight:700; letter-spacing:1px; color:#94a3b8; display:block; margin-bottom:4px;">Hadits terakhir yang disetorkan:</span>
+                        <div style="font-size:17px; font-weight:800; color:#ffffff; line-height:1.35;" id="txtWaliHaditsSetor">
+                            27. Perumpamaan Orang Mukmin & 28. Lemah Lembut
+                        </div>
+                        <div style="display:flex; justify-content:flex-end; margin-top:14px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.1);">
+                            <div style="text-align:right;">
+                                <span style="font-size:9px; text-transform:uppercase; font-weight:700; letter-spacing:1px; color:#94a3b8; display:block;">Predikat Kelancaran</span>
+                                <div id="sealHaditsPredikat" style="font-size:12px; font-weight:800; color:#34d399; display:flex; align-items:center; justify-content:flex-end; gap:6px; margin-top:2px;">
+                                    <span>📜</span>
+                                    <span id="lblPredikatHaditsNama">Lancar (Jayyid Jiddan)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Grade & Drop-up Skor Hadits -->
+                <div id="haditsAdminGradesRow" class="admin-grade-row">
+                    <span class="admin-grade-label">Nilai</span>
+                    <div class="admin-grade-controls">
+                        <div class="grade-pill-group-luxury">
+                            <button type="button" class="grade-pill-btn-luxury hadits-pill-btn" data-grade="A" onclick="window.pilihGradeHadits('A')">A</button>
+                            <button type="button" class="grade-pill-btn-luxury hadits-pill-btn" data-grade="B" onclick="window.pilihGradeHadits('B')">B</button>
+                            <button type="button" class="grade-pill-btn-luxury hadits-pill-btn" data-grade="C" onclick="window.pilihGradeHadits('C')">C</button>
+                            <button type="button" class="grade-pill-btn-luxury hadits-pill-btn" data-grade="D" onclick="window.pilihGradeHadits('D')">D</button>
+                        </div>
+                        <div id="haditsDropdownContainer" class="custom-dropdown-container">
+                            <button type="button" id="haditsDropdownBtn" class="btn-score-dropup" onclick="window.toggleHaditsDropdown(event)">
+                                <span id="haditsDropdownText">88</span>
+                                <span style="font-size:9px; opacity:0.7;">▲</span>
                             </button>
                             <div id="haditsDropdownList" class="custom-dropdown-list"></div>
-                            <input type="hidden" id="editHaditsNilaiAngka" value="">
                         </div>
                     </div>
                 </div>
-                <div class="target-realisasi-grid">
-                    <div class="tr-box">
-                        <div class="tr-label">Target Hadits</div>
-                        <textarea id="editHaditsTarget" class="admin-input" rows="2" disabled></textarea>
-                    </div>
-                    <div class="tr-box">
-                        <div class="tr-label">Yang Disetorkan</div>
-                        <textarea id="editHaditsRealisasi" class="admin-input" rows="2" disabled></textarea>
-                    </div>
-                </div>
+
+                <!-- Hidden Input Form Hadits -->
+                <textarea id="editHaditsTarget" style="display:none;"></textarea>
+                <input type="hidden" id="editStatusHadits" value="belum">
+                <input type="hidden" id="editHaditsNilaiAngka" value="">
+                <div id="badgeHadits" style="display:none;"></div>
             </div>
 
-            <!-- Dashboard Card: Doa -->
-            <div class="detail-card">
-                <div class="card-header-flex">
-                    <div class="detail-header">
-                        <div class="detail-icon">🤲</div>
-                        <span class="detail-label">Doa</span>
-                        <div id="badgeDoa" class="status-badge"></div>
+            <!-- ============================================== -->
+            <!-- SUBJEK 3: DOA                                  -->
+            <!-- ============================================== -->
+            <div id="deckDoa" class="subject-deck" style="display:none;">
+                <!-- Target Masthead Borderless -->
+                <div class="target-masthead">
+                    <div class="target-micro-label">
+                        <span class="target-dot-pulse"></span>
+                        <span class="target-micro-text">TARGET HAFALAN DOA</span>
                     </div>
-                    <input type="hidden" id="editStatusDoa" value="belum">
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        <div id="doaChips" class="grade-pill-group admin-select-status" style="display:none;">
-                            <button type="button" class="grade-pill-btn doa-pill-btn" data-grade="A"
-                                onclick="window.pilihGradeDoa('A')">A</button>
-                            <button type="button" class="grade-pill-btn doa-pill-btn" data-grade="B"
-                                onclick="window.pilihGradeDoa('B')">B</button>
-                            <button type="button" class="grade-pill-btn doa-pill-btn" data-grade="C"
-                                onclick="window.pilihGradeDoa('C')">C</button>
-                            <button type="button" class="grade-pill-btn doa-pill-btn" data-grade="D"
-                                onclick="window.pilihGradeDoa('D')">D</button>
+                    <div id="displayDoaTarget" class="target-fluid-title">
+                        43. Doa Ketika Mendapat Musibah
+                    </div>
+                    <div class="luminous-hairline"></div>
+                </div>
+
+                <!-- Papan Tulis Setoran Doa -->
+                <div class="slate-blackboard-luxury">
+                    <!-- Mode Guru: Textarea Mewah -->
+                    <div id="doaGuruInputArea">
+                        <div style="margin-bottom:6px;">
+                            <span style="font-size:10px; text-transform:uppercase; font-weight:700; letter-spacing:1px; color:#94a3b8;">Doa terakhir yang disetorkan:</span>
                         </div>
-                        <div id="doaDropdownContainer" class="custom-dropdown-container" style="display:none;">
-                            <button type="button" id="doaDropdownBtn" class="custom-dropdown-btn"
-                                onclick="window.toggleDoaDropdown()">
-                                <span id="doaDropdownText">--</span>
-                                <span class="chevron">▼</span>
+                        <textarea id="editDoaRealisasi" class="slate-textarea-luxury" rows="2" oninput="window.syncDoaManual(this.value)" placeholder="Tuliskan judul doa yang disetorkan ananda hari ini..."></textarea>
+                    </div>
+
+                    <!-- Mode Wali: Tampilan Papan Tulis & Stempel Predikat -->
+                    <div id="doaWaliSlateArea" style="display:none;">
+                        <span style="font-size:10px; text-transform:uppercase; font-weight:700; letter-spacing:1px; color:#94a3b8; display:block; margin-bottom:4px;">Doa terakhir yang disetorkan:</span>
+                        <div style="font-size:17px; font-weight:800; color:#ffffff; line-height:1.35;" id="txtWaliDoaSetor">
+                            43. Doa Ketika Mendapat Musibah
+                        </div>
+                        <div style="display:flex; justify-content:flex-end; margin-top:14px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.1);">
+                            <div style="text-align:right;">
+                                <span style="font-size:9px; text-transform:uppercase; font-weight:700; letter-spacing:1px; color:#94a3b8; display:block;">Predikat Kelancaran</span>
+                                <div id="sealDoaPredikat" style="font-size:12px; font-weight:800; color:#34d399; display:flex; align-items:center; justify-content:flex-end; gap:6px; margin-top:2px;">
+                                    <span>📜</span>
+                                    <span id="lblPredikatDoaNama">Sangat Lancar (Mumtaz)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Grade & Drop-up Skor Doa -->
+                <div id="doaAdminGradesRow" class="admin-grade-row">
+                    <span class="admin-grade-label">Nilai</span>
+                    <div class="admin-grade-controls">
+                        <div class="grade-pill-group-luxury">
+                            <button type="button" class="grade-pill-btn-luxury doa-pill-btn" data-grade="A" onclick="window.pilihGradeDoa('A')">A</button>
+                            <button type="button" class="grade-pill-btn-luxury doa-pill-btn" data-grade="B" onclick="window.pilihGradeDoa('B')">B</button>
+                            <button type="button" class="grade-pill-btn-luxury doa-pill-btn" data-grade="C" onclick="window.pilihGradeDoa('C')">C</button>
+                            <button type="button" class="grade-pill-btn-luxury doa-pill-btn" data-grade="D" onclick="window.pilihGradeDoa('D')">D</button>
+                        </div>
+                        <div id="doaDropdownContainer" class="custom-dropdown-container">
+                            <button type="button" id="doaDropdownBtn" class="btn-score-dropup" onclick="window.toggleDoaDropdown(event)">
+                                <span id="doaDropdownText">95</span>
+                                <span style="font-size:9px; opacity:0.7;">▲</span>
                             </button>
                             <div id="doaDropdownList" class="custom-dropdown-list"></div>
-                            <input type="hidden" id="editDoaNilaiAngka" value="">
                         </div>
                     </div>
                 </div>
-                <div class="target-realisasi-grid">
-                    <div class="tr-box">
-                        <div class="tr-label">Target Doa</div>
-                        <textarea id="editDoaTarget" class="admin-input" rows="2" disabled></textarea>
-                    </div>
-                    <div class="tr-box">
-                        <div class="tr-label">Yang Disetorkan</div>
-                        <textarea id="editDoaRealisasi" class="admin-input" rows="2" disabled></textarea>
-                    </div>
-                </div>
+
+                <!-- Hidden Input Form Doa -->
+                <textarea id="editDoaTarget" style="display:none;"></textarea>
+                <input type="hidden" id="editStatusDoa" value="belum">
+                <input type="hidden" id="editDoaNilaiAngka" value="">
+                <div id="badgeDoa" style="display:none;"></div>
             </div>
 
-            <button id="btnSaveMurid" class="btn-primary" style="display:none;" onclick="simpanDataMurid()">Simpan
-                Perubahan Dasbor</button>
+            <!-- FOOTER ACTIONS -->
+            <div id="actionAreaGuru" style="margin-top: 10px;">
+                <button type="button" id="btnSaveMurid" class="btn-gold-luxury" onclick="simpanDataMurid()">
+                    <span>💾</span> Simpan Perubahan Dasbor
+                </button>
+            </div>
+            <div id="actionAreaWali" style="margin-top: 10px; display:none;">
+                <button type="button" id="btnDoaWali" class="btn-gold-luxury" onclick="window.openModalDoa()">
+                    <span>🤲</span> Doakan Kelancaran Hafalan Ananda
+                </button>
+            </div>
+
         </div>
     </div>
+
 
     <!-- MODAL 2: Mading -->
     <div id="madingModal" class="modal center-modal" onclick="closeModalOnBackdrop(event, 'madingModal')">
@@ -630,52 +750,157 @@
                         <div class="sidebar-text-desc">Kembali ke halaman pemilihan kelas.</div>
                     </div>
                 </a>
-                <a href="javascript:void(0)"
-                    onclick="window.location.href='rapor-mutabaah.html?kelas=' + window.kelasTarget"
-                    class="sidebar-item">
-                    <div class="sidebar-icon-wrap">
-                        <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"
-                            viewBox="0 0 24 24">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                            <polyline points="14 2 14 8 20 8"></polyline>
-                            <line x1="16" y1="13" x2="8" y2="13"></line>
-                            <line x1="16" y1="17" x2="8" y2="17"></line>
-                        </svg>
-                    </div>
-                    <div class="sidebar-text">
-                        <div class="sidebar-text-title">Rapor Semester</div>
-                        <div class="sidebar-text-desc">Lihat dasbor evaluasi ketuntasan hafalan ananda.</div>
-                    </div>
-                </a>
             </div>
             <div class="sidebar-footer">Sistem Jurnal Terintegrasi v2.0</div>
         </div>
     </div>
 
-    <!-- MODAL STATISTIK -->
-    <div id="statsModal" class="modal" onclick="if(event.target===this) this.classList.remove('open')">
-        <div class="modal-content" style="max-width: 500px; max-height: 90vh; display: flex; flex-direction: column;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
-                <h3
-                    style="color:var(--gold); font-family: 'Playfair Display', serif; font-size: 20px; font-weight:700;">
-                    Statistik Hari Ini</h3>
-                <button type="button" class="stats-close-btn"
-                    onclick="document.getElementById('statsModal').classList.remove('open')">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                </button>
-            </div>
-
-            <div id="statsChartContainer" style="overflow-y: auto; flex: 1; padding-right: 5px;">
-                <!-- Bar Charts will be injected here by app.js -->
+    <!-- MODAL STATISTIK (BORDERLESS MAJESTIC REDESIGN) -->
+    <div id="statsModal" class="modal" onclick="if(event.target===this) window.closeStatsModal()">
+        <div class="modal-content stats-modal-content card-forest-luxury velvet-noise" id="statsModalCard">
+            <!-- Close Button -->
+            <button type="button" class="stats-close-circle" onclick="window.closeStatsModal()">✕</button>
+            <!-- Ambient Golden Radial Beam -->
+            <div class="stats-ambient-beam"></div>
+            <!-- Dynamic Content Container -->
+            <div id="statsChartContainer" class="stats-chart-scrollable">
+                <!-- Injected dynamically by renderStatsChart() in app.js -->
             </div>
         </div>
     </div>
 
     <!-- Panggil File JS Eksternal (Menggunakan type="module" dan Cache Busting) -->
-    <script type="module" src="app.js?v=28"></script>
+        <!-- ============================================== -->
+    <!-- MODAL DOA ORANG TUA UNTUK ANANDA               -->
+    <!-- ============================================== -->
+    <div id="modalDoa" class="modal-doa-backdrop" onclick="if(event.target===this) window.closeModalDoa()">
+        <div class="modal-doa-card">
+            <!-- Header Modal Doa -->
+            <div class="modal-doa-header">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <span style="font-size:20px;">🤲</span>
+                    <div>
+                        <div class="modal-doa-title">Doa Kelancaran Menghafal Al-Qur'an</div>
+                        <div class="modal-doa-sub">Pilihan doa ulama untuk kemudahan & keteguhan hafalan</div>
+                    </div>
+                </div>
+                <div class="modal-doa-close" onclick="window.closeModalDoa()">✕</div>
+            </div>
+
+            <!-- List Pilihan Doa Ulama -->
+            <div class="modal-doa-list custom-scrollbar">
+                <!-- DOA 1 -->
+                <label class="doa-option-card">
+                    <div class="doa-card-top">
+                        <span class="doa-card-name">1. Doa Titipan Hafalan (Imam Asy-Syafi'i & Salaf)</span>
+                        <input type="radio" name="pilihanDoa" value="1" checked style="accent-color:#d4af37; width:16px; height:16px;">
+                    </div>
+                    <div class="doa-card-tag">Agar Hafalan Terjaga & Tidak Mudah Lupa</div>
+                    <div class="doa-arabic">
+                        اللَّهُمَّ إِنِّي أَسْتَوْدِعُكَ مَا حَفِظَهُ وَمَا قَرَأَهُ، فَرُدَّهُ إِلَيْهِ عِنْدَ حَاجَتِهِ إِلَيْهِ، وَلَا تُنْسِهِ يَا رَبَّ الْعَالَمِينَ
+                    </div>
+                    <div class="doa-latin">
+                        "Allahumma innii astaudi'uka maa hafizhahuu wa maa qoro-ahuu, faruddahu ilaihi 'inda haajatihii ilaih, wa laa tunsihi yaa Robbal 'aalamiin."
+                    </div>
+                    <div class="doa-terjemah">
+                        <span>Artinya:</span> "Ya Allah, hamba menitipkan kepada-Mu apa yang telah ananda hafalkan dan baca, maka kembalikanlah kepadanya di saat ia membutuhkannya, dan janganlah Engkau jadikan ia lupa, wahai Rabb semesta alam."
+                    </div>
+                </label>
+
+                <!-- DOA 2 -->
+                <label class="doa-option-card">
+                    <div class="doa-card-top">
+                        <span class="doa-card-name">2. Doa Pengikat Hati dengan Al-Qur'an (Riwayat Sayyidina Ali r.a.)</span>
+                        <input type="radio" name="pilihanDoa" value="2" style="accent-color:#d4af37; width:16px; height:16px;">
+                    </div>
+                    <div class="doa-card-tag">HR. At-Tirmidzi — Mengokohkan Hafalan di Dalam Dada</div>
+                    <div class="doa-arabic">
+                        اللَّهُمَّ بَدِيعَ السَّمَاوَاتِ وَالْأَرْضِ، أَلْزِمْ قَلْبَهُ حِفْظَ كِتَابِكَ كَمَا عَلَّمْتَهُ، وَارْزُقْهُ أَنْ يَتْلُوَهُ عَلَى النَّحْوِ الَّذِي يُرْضِيكَ عَنْهُ
+                    </div>
+                    <div class="doa-latin">
+                        "Allahumma badii'as-samaawaati wal ardh, alzim qolbahuu hifzha kitaabika kamaa 'allamtahu, warzuq-hu an yatluwahuu 'alan-nahwil ladzii yurdhiika 'anh."
+                    </div>
+                    <div class="doa-terjemah">
+                        <span>Artinya:</span> "Ya Allah Pencipta langit dan bumi, teguhkanlah hatinya untuk senantiasa menghafal Kitab-Mu sebagaimana Engkau telah mengajarkannya, dan karuniakanlah kepadanya kemampuan membacanya sebagaimana yang Engkau ridhai."
+                    </div>
+                </label>
+
+                <!-- DOA 3 -->
+                <label class="doa-option-card">
+                    <div class="doa-card-top">
+                        <span class="doa-card-name">3. Doa Futuh & Mengingat yang Terlupa (Ulama Salaf)</span>
+                        <input type="radio" name="pilihanDoa" value="3" style="accent-color:#d4af37; width:16px; height:16px;">
+                    </div>
+                    <div class="doa-card-tag">Pintu Terbuka Hikmah & Kemudahan Mengingat</div>
+                    <div class="doa-arabic">
+                        اللَّهُمَّ افْتَحْ لَهُ فُتُوحَ الْعَارِفِينَ بِحِكْمَتِكَ، وَانْشُرْ عَلَيْهِ رَحْمَتَكَ، وَذَكِّرْهُ مِنْهُ مَا نَسِيَ، وَعَلِّمْهُ مَا جَهِلَ
+                    </div>
+                    <div class="doa-latin">
+                        "Allahummaftah lahuu futuuhal 'aarifiina bihikmatika, wansyur 'alaihi rohmataka, wa dzakkirhu minhu maa nasiya, wa 'allimhu maa jahil."
+                    </div>
+                    <div class="doa-terjemah">
+                        <span>Artinya:</span> "Ya Allah, bukakanlah untuknya pintu pemahaman orang-orang arif dengan hikmah-Mu, curahkanlah rahmat-Mu kepadanya, ingatkanlah apa yang ia lupa dari hafalannya, dan ajarkanlah kepadanya apa yang belum ia ketahui."
+                    </div>
+                </label>
+
+                <!-- DOA 4 -->
+                <label class="doa-option-card">
+                    <div class="doa-card-top">
+                        <span class="doa-card-name">4. Doa Terang Hati & Kelancaran Lisan (Syaikh Nawawi Al-Bantani)</span>
+                        <input type="radio" name="pilihanDoa" value="4" style="accent-color:#d4af37; width:16px; height:16px;">
+                    </div>
+                    <div class="doa-card-tag">Kelancaran Lisan & Ketajaman Daya Ingat</div>
+                    <div class="doa-arabic">
+                        اللَّهُمَّ نَوِّرْ بِكِتَابِكَ بَصَرَهُ، وَاشْرَحْ بِهِ صَدْرَهُ، وَأَطْلِقْ بِهِ لِسَانَهُ، وَقَوِّ بِهِ حِفْظَهُ وَجَنَانَهُ
+                    </div>
+                    <div class="doa-latin">
+                        "Allahumma nawwir bikitaabika bashoroh, wasyroh bihii shodroh, wa athliq bihii lisaanah, wa qowwi bihii hifzhahuu wa janaanah."
+                    </div>
+                    <div class="doa-terjemah">
+                        <span>Artinya:</span> "Ya Allah, terangilah penglihatannya dengan Kitab-Mu, lapangkanlah dadanya dengannya, lancarkanlah lidahnya dengannya, serta kuatkanlah hafalan dan hatinya dengannya."
+                    </div>
+                </label>
+            </div>
+
+            <!-- Footer Action -->
+            <div class="modal-doa-footer">
+                <button type="button" onclick="window.kirimDoaOrangTua()" class="btn-gold-luxury">
+                    <span>✨</span> Aamiin, Kirimkan Doa untuk Ananda
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="app.js?v=46"></script>
+    <!-- ============================================== -->
+    <!-- FLOATING BOTTOM-SHEET: APRESIASI DOA ORANG TUA -->
+    <!-- ============================================== -->
+    <div id="bottomSheetDoaFeedback" class="doa-bottomsheet-wrap" onclick="if(event.target===this) window.closeBottomSheetDoa()">
+        <div class="doa-bottomsheet-card">
+            <div class="doa-bottomsheet-handle"></div>
+            <div class="doa-bottomsheet-body">
+                <div class="doa-bottomsheet-icon-wrap">
+                    <span class="doa-bottomsheet-icon">🤲</span>
+                    <div class="doa-bottomsheet-glow"></div>
+                </div>
+                <div class="doa-bottomsheet-content">
+                    <div class="doa-bottomsheet-header">
+                        <h3 class="doa-bottomsheet-title">Jazakumullahu Khairan Katsiran ✨</h3>
+                        <span class="doa-bottomsheet-close-x" onclick="window.closeBottomSheetDoa()">✕</span>
+                    </div>
+                    <p class="doa-bottomsheet-desc">
+                        Aamiin Ya Rabbal 'Alamin. Doa tulus Ayah/Bunda untuk ananda <strong id="doaNamaAnanda" class="doa-highlight-name">Afifa Nor Sa'adah</strong> telah teriring hari ini. Semoga Allah melancarkan lisannya dan mengokohkan hafalannya.
+                    </p>
+                    <div class="doa-bottomsheet-actions">
+                        <button type="button" class="btn-gold-luxury doa-bottomsheet-btn" onclick="window.closeBottomSheetDoa()">
+                            <span>✨</span> Aamiin Ya Mujibas Sa'ilin
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </body>
 
 </html>
